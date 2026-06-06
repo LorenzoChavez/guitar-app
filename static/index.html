@@ -95,7 +95,7 @@
                     </div>
 
                     <div class="filter-group-inline" id="dashboard-filter-group-warning">
-                        <span class="filter-label">WARNING</span>
+                        <span class="filter-label">DAYS</span>
                         <button class="pill-btn" data-value="High"><span class="dot bg-red"></span>High</button>
                         <button class="pill-btn" data-value="Low"><span class="dot bg-yellow"></span>Low</button>
                         <button class="pill-btn" data-value="Zero"><span class="dot bg-green"></span>Zero</button>
@@ -190,7 +190,7 @@
                     </div>
 
                     <div class="filter-group-inline" id="filter-group-warning">
-                        <span class="filter-label">WARNING</span>
+                        <span class="filter-label">DAYS</span>
                         <button class="pill-btn active" data-value="all">All</button>
                         <button class="pill-btn" data-value="High"><span class="dot bg-red"></span>High</button>
                         <button class="pill-btn" data-value="Low"><span class="dot bg-yellow"></span>Low</button>
@@ -200,8 +200,12 @@
                     <div class="filter-group-inline" id="filter-group-tutorial">
                         <span class="filter-label">TUTORIAL</span>
                         <button class="pill-btn active" data-value="all">All</button>
-                        <button class="pill-btn" data-value="Yes"><span class="yt-icon-inline">📺</span>Yes</button>
+                        <button class="pill-btn" data-value="Yes">Yes</button>
                         <button class="pill-btn" data-value="No">No</button>
+                    </div>
+
+                    <div class="filter-group-inline">
+                        <button class="pill-btn" id="filter-backlog-btn">Backlog</button>
                     </div>
 
                     <button class="pill-btn clear-btn" id="btn-clear-filters">Clear</button>
@@ -229,14 +233,15 @@
                     <table class="songs-table">
                         <thead>
                             <tr>
-                                <th style="width: 20%">Artist</th>
-                                <th style="width: 25%">Song</th>
-                                <th style="width: 10%">Guitar</th>
-                                <th style="width: 10%">Lyrics</th>
-                                <th style="width: 17%">Progress</th>
-                                <th style="width: 8%">Days Ago</th>
-                                <th style="width: 10%">Warning</th>
-                                <th style="width: 10%">Tutorial</th>
+                                <th style="width: 18%">Artist</th>
+                                <th style="width: 22%">Song</th>
+                                <th style="width: 9%">Guitar</th>
+                                <th style="width: 9%">Lyrics</th>
+                                <th style="width: 14%">Progress</th>
+                                <th style="width: 7%">Days Ago</th>
+                                <th style="width: 9%">Warning</th>
+                                <th style="width: 7%">Tutorial</th>
+                                <th style="width: 5%">Backlog</th>
                             </tr>
                         </thead>
                         <tbody id="directory-tbody">

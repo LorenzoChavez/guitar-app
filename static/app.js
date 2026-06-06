@@ -17,6 +17,7 @@ class GuitarApp {
         this.filterGuitar = 'all';
         this.filterWarning = 'all';
         this.filterTutorial = 'all';
+        this.filterBacklog = false;
 
         // Dashboard filters state
         this.dbFilterArtist = 'all';
@@ -99,6 +100,7 @@ class GuitarApp {
             this.filterGuitar = 'all';
             this.filterWarning = 'all';
             this.filterTutorial = 'all';
+            this.filterBacklog = false;
 
             // Reset active classes
             document.querySelectorAll('.filter-group-inline').forEach(group => {
@@ -107,8 +109,21 @@ class GuitarApp {
                 if (allPill) allPill.classList.add('active');
             });
 
+            const backlogBtn = document.getElementById('filter-backlog-btn');
+            if (backlogBtn) backlogBtn.classList.remove('active');
+
             this.renderDirectory();
         });
+
+        // Backlog toggle filter
+        const backlogBtn = document.getElementById('filter-backlog-btn');
+        if (backlogBtn) {
+            backlogBtn.addEventListener('click', () => {
+                this.filterBacklog = !this.filterBacklog;
+                backlogBtn.classList.toggle('active', this.filterBacklog);
+                this.renderDirectory();
+            });
+        }
 
         // Add Song Form Submit
         document.getElementById('add-song-form').addEventListener('submit', (e) => this.handleAddSongSubmit(e));
@@ -513,7 +528,13 @@ class GuitarApp {
                 matchTutorial = song.tutorial !== 'Yes' && song.tutorial_link === '';
             }
 
-            return matchSearch && matchGuitar && matchWarning && matchTutorial;
+            // Backlog filter (guitar === 0 AND lyrics === 0)
+            let matchBacklog = true;
+            if (this.filterBacklog) {
+                matchBacklog = song.guitar_level === 0 && song.lyrics_level === 0;
+            }
+
+            return matchSearch && matchGuitar && matchWarning && matchTutorial && matchBacklog;
         });
 
         // Apply sorting
@@ -583,12 +604,12 @@ class GuitarApp {
                 daysText = `${song.days}d`;
                 if (song.days > 90 && progressBadge !== 'ZERO') {
                     daysClass = 'text-red font-weight-bold';
-                } else if (song.days >= 60 && progressBadge !== 'ZERO') {
-                    daysClass = 'text-orange';
-                } else if (song.days >= 30 && progressBadge !== 'ZERO') {
-                    daysClass = 'text-yellow';
+                } else if (song.days > 30 && progressBadge !== 'ZERO') {
+                    daysClass = 'text-yellow font-weight-bold';
+                } else if (song.days <= 30 && progressBadge !== 'ZERO') {
+                    daysClass = 'text-dark-green font-weight-bold';
                 } else {
-                    daysClass = 'text-muted';
+                    daysClass = 'text-muted font-weight-bold';
                 }
             }
 
@@ -596,13 +617,13 @@ class GuitarApp {
             const warningStatus = getSongWarning(song);
             let warningHTML = '';
             if (warningStatus === 'High') {
-                warningHTML = `<span class="warning-status text-red"><span class="dot bg-red"></span>High</span>`;
+                warningHTML = `<span class="warning-status text-secondary-muted"><span class="dot bg-red"></span>High</span>`;
             } else if (warningStatus === 'Low') {
-                warningHTML = `<span class="warning-status text-yellow"><span class="dot bg-yellow"></span>Low</span>`;
+                warningHTML = `<span class="warning-status text-secondary-muted"><span class="dot bg-yellow"></span>Low</span>`;
                 // } else if (warningStatus === 'Medium') {
                 //     warningHTML = `<span class="warning-status text-yellow"><span class="dot bg-yellow"></span>Medium</span>`;
             } else {
-                warningHTML = `<span class="warning-status text-green"><span class="dot bg-green"></span>Zero</span>`;
+                warningHTML = `<span class="warning-status text-secondary-muted"><span class="dot bg-green"></span>Zero</span>`;
             }
 
             //  Tutorial column status
@@ -610,6 +631,12 @@ class GuitarApp {
             if (song.tutorial === 'Yes' || song.tutorial_link) {
                 tutorialHTML = `<span class="text-gold" style="display:inline-flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;color:#d9a74a;"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg> Yes</span>`;
             }
+
+            // Backlog column: Yes only if guitar_level === 0 AND lyrics_level === 0
+            const isBacklog = song.guitar_level === 0 && song.lyrics_level === 0;
+            const backlogHTML = isBacklog
+                ? `<span class="backlog-yes">Yes</span>`
+                : `<span class="backlog-no">No</span>`;
 
             tr.innerHTML = `
                 <td><div class="table-artist-name">${escapeHTML(song.artist)}</div></td>
@@ -627,6 +654,7 @@ class GuitarApp {
                 <td><span class="${daysClass}">${daysText}</span></td>
                 <td>${warningHTML}</td>
                 <td>${tutorialHTML}</td>
+                <td>${backlogHTML}</td>
             `;
             tbody.appendChild(tr);
         });
