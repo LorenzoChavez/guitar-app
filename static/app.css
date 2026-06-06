@@ -1,4 +1,5 @@
 /* CSS Design System - Guitar Song Tracker & Lyrics Viewer */
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&family=IBM+Plex+Sans&family=Inter&display=swap');
 
 :root {
     /* Color Palette (Dark Warm Charcoal & Gold) */
@@ -54,7 +55,8 @@
     /* Typography */
     --font-heading: 'Outfit', 'Inter', sans-serif;
     --font-body: 'Inter', sans-serif;
-    --font-chords: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --font-chords: 'Inter', 'Atkinson Hyperlegible', 'IBM Plex Sans', monospace;
+    /* --font-chords: 'Lora', 'Merriweather', 'Source Serif 4', monospace; */
 
     /* Spacing & Borders */
     --radius-lg: 8px;
@@ -976,15 +978,8 @@ body {
 
 /* BACKLOG BADGES */
 .backlog-yes {
-    /* display: inline-block;
-    padding: 2px 7px;
-    border-radius: 4px; */
     font-size: 11px;
-    /* font-weight: 700;
-    letter-spacing: 0.04em;
-    background-color: rgba(217, 167, 74, 0.12); */
     color: var(--accent);
-    /* border: 1px solid rgba(217, 167, 74, 0.25); */
 }
 
 .backlog-no {
@@ -1410,7 +1405,6 @@ body {
 
 .chords-value {
     font-family: var(--font-chords);
-    font-weight: bold;
     font-size: 1.1rem;
     color: var(--text-primary);
 }
@@ -1425,7 +1419,7 @@ body {
 
 .lyrics-display-card {
     padding: 30px;
-    height: calc(100vh - 190px);
+    height: calc(100vh - 150px);
     /* Expanded height to take up the full screen */
     overflow-y: auto;
     position: relative;
