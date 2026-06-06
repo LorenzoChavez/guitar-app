@@ -599,10 +599,10 @@ class GuitarApp {
                 warningHTML = `<span class="warning-status text-red"><span class="dot bg-red"></span>High</span>`;
             } else if (warningStatus === 'Low') {
                 warningHTML = `<span class="warning-status text-yellow"><span class="dot bg-yellow"></span>Low</span>`;
-            } else if (warningStatus === 'Medium') {
-                warningHTML = `<span class="warning-status text-yellow"><span class="dot bg-yellow"></span>Medium</span>`;
+                // } else if (warningStatus === 'Medium') {
+                //     warningHTML = `<span class="warning-status text-yellow"><span class="dot bg-yellow"></span>Medium</span>`;
             } else {
-                warningHTML = `<span class="warning-status text-green"><span class="check-mark">✓</span>Zero</span>`;
+                warningHTML = `<span class="warning-status text-green"><span class="dot bg-green"></span>Zero</span>`;
             }
 
             //  Tutorial column status
@@ -618,7 +618,6 @@ class GuitarApp {
                 <td>${lyricsStars}</td>
                 <td>
                     <div class="progress-cell">
-                        <span class="progress-badge ${badgeClass}">${progressBadge}</span>
                         <div class="progress-mini-track">
                             <div class="progress-mini-fill" style="width: ${progressPct}%"></div>
                         </div>

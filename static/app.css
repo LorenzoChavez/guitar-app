@@ -27,6 +27,14 @@
     --accent-glow: rgba(217, 167, 74, 0.08);
     --accent-hover: #e5b960;
 
+    --light-green: #1c9c4d;
+    /* Light Green Progress High */
+    --light-green-glow: rgba(28, 156, 77, 0.15);
+
+    --dark-orange: #f0713a;
+    /* Dark Orange Progress Low */
+    --dark-orange-glow: rgba(212, 131, 44, 0.15);
+
     --blue: #5b21b6;
     /* Purple-Blue Progress Medium */
     --blue-glow: rgba(91, 33, 182, 0.15);
@@ -473,6 +481,14 @@ body {
     background-color: var(--gold);
 }
 
+.bg-light-green {
+    background-color: var(--light-green);
+}
+
+.bg-dark-orange {
+    background-color: var(--dark-orange);
+}
+
 .bg-blue {
     background-color: var(--blue);
 }
@@ -719,6 +735,10 @@ body {
     background-color: #fbbf24;
 }
 
+.pill-btn .bg-green {
+    background-color: #10b981;
+}
+
 .pill-btn .check-mark {
     color: #10b981;
     margin-right: 6px;
@@ -890,23 +910,6 @@ body {
     user-select: none;
 }
 
-.badge-zero {
-    background-color: #2d2d30;
-    color: #828286;
-}
-
-.badge-low {
-    background-color: var(--red);
-}
-
-.badge-medium {
-    background-color: var(--blue);
-}
-
-.badge-high {
-    background-color: var(--green);
-}
-
 .progress-mini-track {
     width: 50px;
     height: 3px;
@@ -957,7 +960,7 @@ body {
 }
 
 .warning-status .bg-green {
-    background-color: #065f46;
+    background-color: #10b981;
 }
 
 .warning-status .check-mark {
