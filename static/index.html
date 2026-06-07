@@ -403,7 +403,7 @@
                                     <span>Text Size:</span>
                                     <div class="zoom-controls">
                                         <button class="btn btn-icon btn-sm" id="btn-zoom-out">A-</button>
-                                        <span class="zoom-value" id="zoom-level">14px</span>
+                                        <span class="zoom-value" id="zoom-level">16px</span>
                                         <button class="btn btn-icon btn-sm" id="btn-zoom-in">A+</button>
                                     </div>
                                 </div>
@@ -481,7 +481,14 @@
                         <div class="lyrics-view-wrapper">
                             <!-- The Interactive Lyrics Sheets -->
                             <div class="lyrics-display-card" id="lyrics-display">
-                                <pre id="lyrics-content">No lyrics loaded.</pre>
+                                <div class="lyrics-two-col" id="lyrics-content">
+                                    <div class="lyrics-col">
+                                        <pre id="lyrics-col-left">No lyrics loaded.</pre>
+                                    </div>
+                                    <div class="lyrics-col">
+                                        <pre id="lyrics-col-right"></pre>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

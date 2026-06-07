@@ -141,8 +141,8 @@ class GuitarApp {
         document.getElementById('btn-delete-song').addEventListener('click', () => this.deleteCurrentSong());
 
         // Font Size Zoom Buttons
-        document.getElementById('btn-zoom-in').addEventListener('click', () => this.adjustFontSize(2));
-        document.getElementById('btn-zoom-out').addEventListener('click', () => this.adjustFontSize(-2));
+        document.getElementById('btn-zoom-in').addEventListener('click', () => this.adjustFontSize(1));
+        document.getElementById('btn-zoom-out').addEventListener('click', () => this.adjustFontSize(-1));
 
         // Auto Scroll Toggle and Slider
         document.getElementById('btn-scroll-toggle').addEventListener('click', () => this.toggleAutoScroll());
@@ -705,20 +705,69 @@ class GuitarApp {
         }
 
         // Lyrics display
+        const colLeft = document.getElementById('lyrics-col-left');
+        const colRight = document.getElementById('lyrics-col-right');
         const lyricsContent = document.getElementById('lyrics-content');
-        if (song.lyrics) {
-            lyricsContent.innerText = song.lyrics;
-        } else {
-            lyricsContent.innerHTML = `<span style="color: var(--text-muted);">No lyrics defined. Click "Edit Song Chords/Lyrics" below to write chords & lyrics!</span>`;
-        }
+        const displayCard = document.getElementById('lyrics-display');
 
-        // Reset scroll position and scrolling state
-        document.getElementById('lyrics-display').scrollTop = 0;
+        // Reset scrolling state
         if (this.isScrolling) {
             this.stopAutoScroll();
         }
 
-        this.showView('song-viewer-view');
+        if (song.lyrics) {
+            const text = song.lyrics;
+
+            // Start: all lyrics in left column, single-col mode
+            colLeft.innerText = text;
+            colRight.innerText = '';
+            lyricsContent.classList.remove('lyrics-two-col');
+
+            // Show the view so the DOM is rendered and measurable
+            this.showView('song-viewer-view');
+            displayCard.scrollTop = 0;
+
+            requestAnimationFrame(() => {
+                const availableHeight = displayCard.clientHeight;
+
+                // If all lyrics fit in one column, we're done
+                if (colLeft.scrollHeight <= availableHeight) {
+                    return;
+                }
+
+                // Content overflows: activate two-col grid, then find the split point
+                // by filling col-left stanza by stanza until it would overflow.
+                lyricsContent.classList.add('lyrics-two-col');
+
+                // Split text into stanzas (separated by blank lines)
+                const stanzas = text.split(/\n\n/);
+
+                // Binary-search for how many stanzas fit in col-left
+                let lo = 1, hi = stanzas.length - 1, bestFit = 0;
+                while (lo <= hi) {
+                    const mid = Math.floor((lo + hi) / 2);
+                    colLeft.innerText = stanzas.slice(0, mid).join('\n\n').trimEnd();
+                    if (colLeft.scrollHeight <= availableHeight) {
+                        bestFit = mid;
+                        lo = mid + 1;
+                    } else {
+                        hi = mid - 1;
+                    }
+                }
+
+                // If nothing fits even alone, put at least one stanza in left col
+                if (bestFit === 0) bestFit = 1;
+
+                colLeft.innerText = stanzas.slice(0, bestFit).join('\n\n').trimEnd();
+                colRight.innerText = stanzas.slice(bestFit).join('\n\n').trimStart();
+            });
+        } else {
+            colLeft.innerHTML = `<span style="color: var(--text-muted);">No lyrics defined. Click "Edit Song Chords/Lyrics" below to write chords &amp; lyrics!</span>`;
+            colRight.innerText = '';
+            lyricsContent.classList.remove('lyrics-two-col');
+            this.showView('song-viewer-view');
+            displayCard.scrollTop = 0;
+        }
     }
 
     renderRatingStars(containerId, level, type) {
@@ -941,8 +990,8 @@ class GuitarApp {
     adjustFontSize(delta) {
         this.zoomLevel = Math.max(10, Math.min(32, this.zoomLevel + delta));
 
-        const content = document.getElementById('lyrics-content');
-        content.style.fontSize = `${this.zoomLevel}px`;
+        document.getElementById('lyrics-col-left').style.fontSize = `${this.zoomLevel}px`;
+        document.getElementById('lyrics-col-right').style.fontSize = `${this.zoomLevel}px`;
 
         document.getElementById('zoom-level').innerText = `${this.zoomLevel}px`;
     }
