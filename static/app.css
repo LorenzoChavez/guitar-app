@@ -1160,6 +1160,14 @@ body {
     color: var(--accent);
 }
 
+.btn-disabled {
+    opacity: 0.35;
+    color: var(--text-muted) !important;
+    border-color: var(--border-color) !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
 .btn-danger-outline {
     background-color: transparent;
     color: var(--red);

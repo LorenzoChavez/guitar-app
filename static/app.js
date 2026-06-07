@@ -688,20 +688,21 @@ class GuitarApp {
         document.getElementById('view-progress-label').innerText = `${progressPct}%`;
         document.getElementById('view-progress-bar').style.width = `${progressPct}%`;
 
-        // Video Tutorial Links
-        const tutorialCard = document.getElementById('view-tutorial-card');
-        const tutorialLink = document.getElementById('view-tutorial-link');
-
-        if (song.tutorial_link) {
-            tutorialCard.style.display = 'block';
-            tutorialLink.href = song.tutorial_link;
-        } else {
-            tutorialCard.style.display = 'none';
-        }
-
         // Integration search links
         document.getElementById('btn-search-youtube').href = `https://www.youtube.com/results?search_query=${encodeURIComponent(song.artist + ' ' + song.title + ' guitar tutorial')}`;
         document.getElementById('btn-search-chordify').href = `https://chordify.net/search/${encodeURIComponent(song.artist + ' ' + song.title)}`;
+
+        // Tutorial quick-link button
+        const tutorialLinkBtn = document.getElementById('btn-tutorial-link');
+        if (song.tutorial_link) {
+            tutorialLinkBtn.href = song.tutorial_link;
+            tutorialLinkBtn.classList.remove('btn-disabled');
+            tutorialLinkBtn.removeAttribute('aria-disabled');
+        } else {
+            tutorialLinkBtn.href = '#';
+            tutorialLinkBtn.classList.add('btn-disabled');
+            tutorialLinkBtn.setAttribute('aria-disabled', 'true');
+        }
 
         // Lyrics display
         const lyricsContent = document.getElementById('lyrics-content');
