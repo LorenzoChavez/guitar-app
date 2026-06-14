@@ -941,6 +941,7 @@ class GuitarApp {
 
             if (response.ok) {
                 this.showToast("Song deleted.");
+                this.closeEditModal();
                 await this.fetchSongs(); // Reload list
                 this.showView('dashboard-view'); // Redirect to home
             } else {
@@ -981,8 +982,6 @@ class GuitarApp {
         this._layoutFrameId = requestAnimationFrame(() => {
             this._layoutFrameId = null;
             const availableHeight = displayCard.clientHeight;
-
-            fetch(`/api/songs?debug=h_${availableHeight}_vs_sh_${colLeft.scrollHeight}_zoom_${this.zoomLevel}`);
 
             // If all lyrics fit in one column, we're done
             if (colLeft.scrollHeight <= availableHeight) {
