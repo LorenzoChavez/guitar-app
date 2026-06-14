@@ -167,7 +167,7 @@ body {
 .sidebar-toggle:hover {
     color: var(--text-primary);
     border-color: var(--text-secondary);
-    background-color: rgba(255,255,255,0.05);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .brand {
@@ -277,7 +277,7 @@ body {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 16px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1289,7 +1289,7 @@ body {
     top: 20px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 }
 
 .back-link-btn {
@@ -1331,7 +1331,8 @@ body {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 16px;
+    border-radius: var(--radius-md);
+    padding: 22px;
 }
 
 .ratings-card h4 {
@@ -1409,7 +1410,8 @@ body {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 16px;
+    border-radius: var(--radius-md);
+    padding: 22px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1433,7 +1435,8 @@ body {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 16px;
+    border-radius: var(--radius-md);
+    padding: 22px;
 }
 
 .tutorial-card h4,
