@@ -349,8 +349,14 @@ class GuitarApp {
     // STATE UPDATES & STATS
     updateGlobalStats() {
         const total = this.songs.length;
-        const sidebarTotal = document.getElementById('sidebar-total-songs');
-        if (sidebarTotal) sidebarTotal.innerText = total;
+        
+        let minDays = 0;
+        if (total > 0) {
+            minDays = Math.min(...this.songs.map(s => s.days));
+        }
+
+        const sidebarDays = document.getElementById('sidebar-days-without-playing');
+        if (sidebarDays) sidebarDays.innerText = minDays;
 
         // Dashboard specific cards
         const statsSongs = document.getElementById('stat-card-songs');
