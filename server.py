@@ -25,6 +25,10 @@ def load_db():
                         song['days'] = 999
                 else:
                     song['days'] = 999
+                
+                # Initialize play_count if missing
+                song['play_count'] = song.get('play_count', 0)
+                
             return songs
     except Exception as e:
         print(f"Error loading database: {e}")
@@ -60,12 +64,14 @@ def mark_played(song_id):
         if song['id'] == song_id:
             song['last_played'] = today_str
             song['days'] = 0
+            song['play_count'] += 1
+            new_play_count = song['play_count']
             found = True
             break
             
     if found:
         save_db(songs)
-        return jsonify({"success": True, "last_played": today_str})
+        return jsonify({"success": True, "last_played": today_str, "play_count": new_play_count})
     return jsonify({"success": False, "error": "Song not found"}), 404
 
 @app.route('/api/songs/<int:song_id>/levels', methods=['POST'])
@@ -172,7 +178,8 @@ def add_song():
         "tutorial": tutorial,
         "tutorial_link": tutorial_link,
         "chords": chords,
-        "lyrics": lyrics_text
+        "lyrics": lyrics_text,
+        "play_count": 0
     }
     
     songs.append(new_song)

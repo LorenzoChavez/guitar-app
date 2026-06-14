@@ -702,9 +702,10 @@ class GuitarApp {
 
         // Days & last played
         document.getElementById('view-song-days').innerText = song.last_played ? song.days : 'Never';
-        document.getElementById('view-song-last-played').innerText = song.last_played
-            ? `Last played: ${formatDateString(song.last_played)}`
-            : 'Never played';
+        document.getElementById('view-song-last-played').innerText = song.last_played ? `Last played: ${song.last_played}` : 'Not played yet';
+        
+        // Times Played specific to this song
+        document.getElementById('view-song-times-played').innerText = song.play_count || 0;
 
         // Rating Stars Rendering
         this.renderRatingStars('view-guitar-rating', song.guitar_level, 'guitar');
@@ -825,8 +826,12 @@ class GuitarApp {
                 if (song) {
                     song.last_played = data.last_played;
                     song.days = 0;
+                    if (data.play_count !== undefined) {
+                        song.play_count = data.play_count;
+                    }
 
                     this.showToast("Song marked as played today!");
+                    this.updateGlobalStats(); // Update sidebar stats
                     this.viewSong(songId); // Re-render view
                 }
             } else {
