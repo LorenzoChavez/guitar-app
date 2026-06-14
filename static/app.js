@@ -338,7 +338,7 @@ class GuitarApp {
     toggleSidebar() {
         const sidebar = document.querySelector('.sidebar');
         const main = document.querySelector('.main-content');
-        
+
         sidebar.classList.toggle('collapsed');
         main.classList.toggle('sidebar-hidden');
 
@@ -349,7 +349,7 @@ class GuitarApp {
     // STATE UPDATES & STATS
     updateGlobalStats() {
         const total = this.songs.length;
-        
+
         let minDays = 0;
         if (total > 0) {
             minDays = Math.min(...this.songs.map(s => s.days));
@@ -485,10 +485,10 @@ class GuitarApp {
                 let tagText = 'Never Played';
 
                 if (song.last_played) {
-                    if (song.days > 90) {
+                    if (song.days > 60) {
                         tagClass = 'tag-high';
                         tagText = `${song.days} d ago`;
-                    } else if (song.days >= 30) {
+                    } else if (song.days >= 25) {
                         tagClass = 'tag-low';
                         tagText = `${song.days} d ago`;
                     } else {
