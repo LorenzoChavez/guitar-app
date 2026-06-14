@@ -143,6 +143,16 @@ class GuitarApp {
         // Sidebar Toggle
         document.getElementById('btn-toggle-sidebar').addEventListener('click', () => this.toggleSidebar());
 
+        // Random Song from Tier badge click
+        document.querySelectorAll('.tier-badge').forEach(badge => {
+            badge.addEventListener('click', () => {
+                const tier = parseInt(badge.innerText);
+                if (!isNaN(tier)) {
+                    this.playRandomSongFromTier(tier);
+                }
+            });
+        });
+
         // Font Size Zoom Buttons
         document.getElementById('btn-zoom-in').addEventListener('click', () => this.adjustFontSize(1));
         document.getElementById('btn-zoom-out').addEventListener('click', () => this.adjustFontSize(-1));
@@ -515,6 +525,20 @@ class GuitarApp {
         const dbCountElem = document.getElementById('dashboard-songs-count');
         if (dbCountElem) {
             dbCountElem.innerText = `${totalFiltered} songs`;
+        }
+    }
+
+    playRandomSongFromTier(tier) {
+        const listContainer = document.getElementById(`tier-list-${tier}`);
+        if (!listContainer) return;
+        
+        const cards = listContainer.querySelectorAll('.song-card');
+        if (cards.length > 0) {
+            const randomIndex = Math.floor(Math.random() * cards.length);
+            const randomCard = cards[randomIndex];
+            randomCard.click(); // Trigger the click event attached to the card
+        } else {
+            this.showToast(`No songs currently shown in Tier ${tier}.`, false);
         }
     }
 
