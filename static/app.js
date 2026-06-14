@@ -981,7 +981,10 @@ class GuitarApp {
         // Allow DOM to render and measure
         this._layoutFrameId = requestAnimationFrame(() => {
             this._layoutFrameId = null;
-            const availableHeight = displayCard.clientHeight;
+            const cardStyle = getComputedStyle(displayCard);
+            const availableHeight = displayCard.clientHeight
+                - parseFloat(cardStyle.paddingTop)
+                - parseFloat(cardStyle.paddingBottom);
 
             // If all lyrics fit in one column, we're done
             if (colLeft.scrollHeight <= availableHeight) {

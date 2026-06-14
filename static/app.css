@@ -1431,10 +1431,8 @@ body {
 }
 
 .lyrics-display-card {
-    padding: 30px;
-    padding-top: 20px;
+    padding: 20px 30px;
     height: 100%;
-    overflow-y: auto;
     position: relative;
 }
 
