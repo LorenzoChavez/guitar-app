@@ -103,6 +103,71 @@ body {
     position: fixed;
     height: 100vh;
     z-index: 100;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+    width: 80px;
+    padding: 24px 12px;
+}
+
+.sidebar.collapsed .brand {
+    justify-content: center;
+}
+
+.sidebar.collapsed .brand h2,
+.sidebar.collapsed .brand-logo,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .sidebar-stat-box,
+.sidebar.collapsed .sidebar-footer p {
+    display: none;
+}
+
+.sidebar.collapsed .nav-item {
+    justify-content: center;
+    padding: 12px;
+}
+
+.sidebar.collapsed .sidebar-footer {
+    justify-content: center;
+}
+
+/* Toggle button inside the brand bar */
+.sidebar-toggle {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s, margin 0.3s ease;
+    flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    margin-left: 0;
+}
+
+.sidebar-toggle svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-toggle svg {
+    transform: rotate(180deg);
+}
+
+.sidebar-toggle:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+    background-color: rgba(255,255,255,0.05);
 }
 
 .brand {
@@ -286,6 +351,11 @@ body {
     padding: 30px 40px;
     display: flex;
     flex-direction: column;
+    transition: margin-left 0.3s ease;
+}
+
+.main-content.sidebar-hidden {
+    margin-left: 80px;
 }
 
 /* TOP HEADER */

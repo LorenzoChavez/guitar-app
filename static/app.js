@@ -140,6 +140,9 @@ class GuitarApp {
         // Delete Song Button
         document.getElementById('btn-delete-song').addEventListener('click', () => this.deleteCurrentSong());
 
+        // Sidebar Toggle
+        document.getElementById('btn-toggle-sidebar').addEventListener('click', () => this.toggleSidebar());
+
         // Font Size Zoom Buttons
         document.getElementById('btn-zoom-in').addEventListener('click', () => this.adjustFontSize(1));
         document.getElementById('btn-zoom-out').addEventListener('click', () => this.adjustFontSize(-1));
@@ -329,6 +332,18 @@ class GuitarApp {
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
+    }
+
+    // SIDEBAR COLLAPSE / EXPAND
+    toggleSidebar() {
+        const sidebar = document.querySelector('.sidebar');
+        const main = document.querySelector('.main-content');
+        
+        sidebar.classList.toggle('collapsed');
+        main.classList.toggle('sidebar-hidden');
+
+        // Re-layout lyrics after the transition finishes (300ms)
+        setTimeout(() => this.layoutLyrics(), 320);
     }
 
     // STATE UPDATES & STATS
