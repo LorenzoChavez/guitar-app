@@ -155,6 +155,13 @@ class GuitarApp {
             }
         });
 
+        // Resize listener to adjust lyrics columns dynamically
+        window.addEventListener('resize', () => {
+            if (this.currentView === 'song-viewer-view') {
+                this.layoutLyrics();
+            }
+        });
+
         // Dashboard Artist dropdown filter
         const dbArtistSelect = document.getElementById('dashboard-filter-artist');
         if (dbArtistSelect) {
@@ -716,51 +723,10 @@ class GuitarApp {
         }
 
         if (song.lyrics) {
-            const text = song.lyrics;
-
-            // Start: all lyrics in left column, single-col mode
-            colLeft.innerText = text;
-            colRight.innerText = '';
-            lyricsContent.classList.remove('lyrics-two-col');
-
             // Show the view so the DOM is rendered and measurable
             this.showView('song-viewer-view');
             displayCard.scrollTop = 0;
-
-            requestAnimationFrame(() => {
-                const availableHeight = displayCard.clientHeight;
-
-                // If all lyrics fit in one column, we're done
-                if (colLeft.scrollHeight <= availableHeight) {
-                    return;
-                }
-
-                // Content overflows: activate two-col grid, then find the split point
-                // by filling col-left stanza by stanza until it would overflow.
-                lyricsContent.classList.add('lyrics-two-col');
-
-                // Split text into stanzas (separated by blank lines)
-                const stanzas = text.split(/\n\n/);
-
-                // Binary-search for how many stanzas fit in col-left
-                let lo = 1, hi = stanzas.length - 1, bestFit = 0;
-                while (lo <= hi) {
-                    const mid = Math.floor((lo + hi) / 2);
-                    colLeft.innerText = stanzas.slice(0, mid).join('\n\n').trimEnd();
-                    if (colLeft.scrollHeight <= availableHeight) {
-                        bestFit = mid;
-                        lo = mid + 1;
-                    } else {
-                        hi = mid - 1;
-                    }
-                }
-
-                // If nothing fits even alone, put at least one stanza in left col
-                if (bestFit === 0) bestFit = 1;
-
-                colLeft.innerText = stanzas.slice(0, bestFit).join('\n\n').trimEnd();
-                colRight.innerText = stanzas.slice(bestFit).join('\n\n').trimStart();
-            });
+            this.layoutLyrics();
         } else {
             colLeft.innerHTML = `<span style="color: var(--text-muted);">No lyrics defined. Click "Edit Song Chords/Lyrics" below to write chords &amp; lyrics!</span>`;
             colRight.innerText = '';
@@ -986,14 +952,76 @@ class GuitarApp {
         }
     }
 
+    // LAYOUT & DYNAMICALLY SPLIT LYRICS
+    layoutLyrics() {
+        const song = this.songs.find(s => s.id === this.currentSongId);
+        if (!song || !song.lyrics) return;
+
+        const colLeft = document.getElementById('lyrics-col-left');
+        const colRight = document.getElementById('lyrics-col-right');
+        const lyricsContent = document.getElementById('lyrics-content');
+        const displayCard = document.getElementById('lyrics-display');
+
+        const text = song.lyrics;
+
+        // Apply current font size to columns immediately so height checks are accurate
+        colLeft.style.fontSize = `${this.zoomLevel}px`;
+        colRight.style.fontSize = `${this.zoomLevel}px`;
+
+        // Start: all lyrics in left column, single-col mode
+        colLeft.innerText = text;
+        colRight.innerText = '';
+        lyricsContent.classList.remove('lyrics-two-col');
+
+        if (this._layoutFrameId) {
+            cancelAnimationFrame(this._layoutFrameId);
+        }
+
+        // Allow DOM to render and measure
+        this._layoutFrameId = requestAnimationFrame(() => {
+            this._layoutFrameId = null;
+            const availableHeight = displayCard.clientHeight;
+
+            fetch(`/api/songs?debug=h_${availableHeight}_vs_sh_${colLeft.scrollHeight}_zoom_${this.zoomLevel}`);
+
+            // If all lyrics fit in one column, we're done
+            if (colLeft.scrollHeight <= availableHeight) {
+                return;
+            }
+
+            // Content overflows: activate two-col grid, then find the split point
+            // by filling col-left stanza by stanza until it would overflow.
+            lyricsContent.classList.add('lyrics-two-col');
+
+            // Split text into stanzas (separated by blank lines)
+            const stanzas = text.split(/\n\n/);
+
+            // Binary-search for how many stanzas fit in col-left
+            let lo = 1, hi = stanzas.length - 1, bestFit = 0;
+            while (lo <= hi) {
+                const mid = Math.floor((lo + hi) / 2);
+                colLeft.innerText = stanzas.slice(0, mid).join('\n\n').trimEnd();
+                if (colLeft.scrollHeight <= availableHeight) {
+                    bestFit = mid;
+                    lo = mid + 1;
+                } else {
+                    hi = mid - 1;
+                }
+            }
+
+            // If nothing fits even alone, put at least one stanza in left col
+            if (bestFit === 0) bestFit = 1;
+
+            colLeft.innerText = stanzas.slice(0, bestFit).join('\n\n').trimEnd();
+            colRight.innerText = stanzas.slice(bestFit).join('\n\n').trimStart();
+        });
+    }
+
     // ZOOM IN / OUT LYRICS FONT
     adjustFontSize(delta) {
         this.zoomLevel = Math.max(10, Math.min(32, this.zoomLevel + delta));
-
-        document.getElementById('lyrics-col-left').style.fontSize = `${this.zoomLevel}px`;
-        document.getElementById('lyrics-col-right').style.fontSize = `${this.zoomLevel}px`;
-
         document.getElementById('zoom-level').innerText = `${this.zoomLevel}px`;
+        this.layoutLyrics();
     }
 
     // AUTO SCROLLER SYSTEM
