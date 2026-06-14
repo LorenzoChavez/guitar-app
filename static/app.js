@@ -713,9 +713,7 @@ class GuitarApp {
 
         // Progress Bar
         const progressVal = (song.guitar_level + song.lyrics_level) / 6;
-        const progressPct = Math.round(progressVal * 100);
-        document.getElementById('view-progress-label').innerText = `${progressPct}%`;
-        document.getElementById('view-progress-bar').style.width = `${progressPct}%`;
+        const progressPct = Math.round(((song.guitar_level + song.lyrics_level) / 6) * 100);
 
         // Integration search links
         document.getElementById('btn-search-youtube').href = `https://www.youtube.com/results?search_query=${encodeURIComponent(song.artist + ' ' + song.title + ' guitar tutorial')}`;
