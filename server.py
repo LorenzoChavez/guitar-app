@@ -329,6 +329,16 @@ def export_csv():
     response.headers['Content-Disposition'] = 'attachment; filename=guitar_songs_export.csv'
     return response
 
+@app.route('/api/shutdown', methods=['POST'])
+def shutdown_server():
+    def kill_process():
+        import time
+        time.sleep(0.6)
+        os._exit(0)
+    import threading
+    threading.Thread(target=kill_process, daemon=True).start()
+    return jsonify({'success': True, 'message': 'Servidor detenido con éxito.'})
+
 if __name__ == '__main__':
     print("Starting Guitar Songs server...")
     print("Serving frontend files from: static/")

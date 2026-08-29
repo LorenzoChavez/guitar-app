@@ -199,6 +199,12 @@ class GuitarApp {
             });
         }
 
+        // Server Shutdown Button
+        const btnShutdown = document.getElementById('btn-shutdown-server');
+        if (btnShutdown) {
+            btnShutdown.addEventListener('click', () => this.shutdownServer());
+        }
+
         // Close modal on outside backdrop click
         window.addEventListener('click', (e) => {
             const backupModal = document.getElementById('backup-modal');
@@ -548,6 +554,30 @@ class GuitarApp {
             modal.classList.remove('open');
             modal.style.display = 'none';
         }
+    }
+
+    async shutdownServer() {
+        if (!confirm("¿Deseas apagar el servidor local de Guitar Songs?")) return;
+
+        try {
+            this.showToast("Apagando servidor...");
+            await fetch('/api/shutdown', { method: 'POST' });
+        } catch (e) {
+            // Expected network disconnection as process terminates
+        }
+
+        document.body.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #0c0d0e; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 20px;">
+                <div style="font-size: 3.5rem; margin-bottom: 16px;">🎸</div>
+                <h2 style="margin-bottom: 8px; color: #d9a74a; font-size: 1.6rem;">Servidor Apagado Correctamente</h2>
+                <p style="color: #8c8f96; max-width: 440px; line-height: 1.6; font-size: 0.95rem; margin-bottom: 24px;">
+                    Todas tus canciones y acordes están a salvo en tu base de datos local. Ya puedes cerrar esta pestaña del navegador con total seguridad.
+                </p>
+                <div style="display: inline-flex; align-items: center; gap: 8px; background-color: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: #aaa;">
+                    <span>Para volver a abrir la app, haz doble clic en el icono del Escritorio</span>
+                </div>
+            </div>
+        `;
     }
 
     exportJson() {
