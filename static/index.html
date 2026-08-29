@@ -49,6 +49,18 @@
                     </svg>
                     <span>Song Directory</span>
                 </button>
+                <button class="nav-item" data-target="chords-view" id="nav-chords">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+                        <circle cx="6" cy="6" r="2.5"></circle>
+                        <circle cx="6" cy="18" r="2.5"></circle>
+                        <line x1="20" y1="4" x2="20" y2="20"></line>
+                        <line x1="14" y1="4" x2="14" y2="20"></line>
+                        <line x1="8" y1="4" x2="8" y2="20"></line>
+                        <line x1="2" y1="9" x2="22" y2="9"></line>
+                        <line x1="2" y1="15" x2="22" y2="15"></line>
+                    </svg>
+                    <span>Chords</span>
+                </button>
                 <button class="nav-item" data-target="add-view" id="nav-add">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -61,14 +73,14 @@
                     <span class="sidebar-stat-value" id="sidebar-days-without-playing">0</span>
                 </div>
 
-                <a href="/api/export" class="nav-item export-btn" style="text-decoration: none;">
+                <button class="nav-item" id="nav-backup" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    <span>Export to CSV</span>
-                </a>
+                    <span>Backup & Sync</span>
+                </button>
             </nav>
             <div class="sidebar-footer">
                 <p>Running Locally</p>
@@ -137,7 +149,14 @@
                                 <h3>Solid</h3>
                                 <p>Comfortable to play</p>
                             </div>
-                            <span class="tier-count-badge" id="tier-count-3">0</span>
+                            <div class="tier-counts-group">
+                                <div class="tier-crit-breakdown">
+                                    <span class="crit-count crit-zero" id="tier-crit-zero-3" title="Zero warning (Recent)">0</span>
+                                    <span class="crit-count crit-low" id="tier-crit-low-3" title="Low warning">0</span>
+                                    <span class="crit-count crit-high" id="tier-crit-high-3" title="High warning (Overdue)">0</span>
+                                </div>
+                                <span class="tier-count-badge" id="tier-count-3">0</span>
+                            </div>
                         </div>
                         <div class="tier-list" id="tier-list-3">
                             <!-- Cards inserted here dynamic -->
@@ -152,7 +171,14 @@
                                 <h3>Practice</h3>
                                 <p>Getting there</p>
                             </div>
-                            <span class="tier-count-badge" id="tier-count-2">0</span>
+                            <div class="tier-counts-group">
+                                <div class="tier-crit-breakdown">
+                                    <span class="crit-count crit-zero" id="tier-crit-zero-2" title="Zero warning (Recent)">0</span>
+                                    <span class="crit-count crit-low" id="tier-crit-low-2" title="Low warning">0</span>
+                                    <span class="crit-count crit-high" id="tier-crit-high-2" title="High warning (Overdue)">0</span>
+                                </div>
+                                <span class="tier-count-badge" id="tier-count-2">0</span>
+                            </div>
                         </div>
                         <div class="tier-list" id="tier-list-2">
                             <!-- Cards inserted here dynamic -->
@@ -167,7 +193,14 @@
                                 <h3>Learning</h3>
                                 <p>Can't play yet</p>
                             </div>
-                            <span class="tier-count-badge" id="tier-count-1">0</span>
+                            <div class="tier-counts-group">
+                                <div class="tier-crit-breakdown">
+                                    <span class="crit-count crit-zero" id="tier-crit-zero-1" title="Zero warning (Recent)">0</span>
+                                    <span class="crit-count crit-low" id="tier-crit-low-1" title="Low warning">0</span>
+                                    <span class="crit-count crit-high" id="tier-crit-high-1" title="High warning (Overdue)">0</span>
+                                </div>
+                                <span class="tier-count-badge" id="tier-count-1">0</span>
+                            </div>
                         </div>
                         <div class="tier-list" id="tier-list-1">
                             <!-- Cards inserted here dynamic -->
@@ -378,18 +411,20 @@
                                 </div>
                             </div>
 
-                            <!-- Played Action Card -->
+                            <!-- Played Action Card (Compact 2-Column Grid) -->
                             <div class="played-card">
-                                <div>
-                                    <p class="meta-label">Days Without Playing</p>
-                                    <h3 id="view-song-days">-</h3>
-                                    <p class="helper-text" id="view-song-last-played">Last played: -</p>
+                                <div class="played-stats-grid">
+                                    <div class="played-stat-col">
+                                        <p class="meta-label">Days Without</p>
+                                        <h3 id="view-song-days">-</h3>
+                                        <p class="helper-text" id="view-song-last-played">-</p>
+                                    </div>
+                                    <div class="played-stat-col">
+                                        <p class="meta-label">Times Played</p>
+                                        <h3 id="view-song-times-played">0</h3>
+                                    </div>
                                 </div>
-                                <div style="margin-top: 16px;">
-                                    <p class="meta-label">Total Times Played</p>
-                                    <h3 id="view-song-times-played" style="font-size: 1.25rem;">0</h3>
-                                </div>
-                                <button class="btn btn-primary full-width" id="btn-mark-played">
+                                <button class="btn btn-primary full-width btn-sm" id="btn-mark-played">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         class="icon-sm">
                                         <polyline points="20 6 9 17 4 12"></polyline>
@@ -398,20 +433,37 @@
                                 </button>
                             </div>
 
-                            <!-- Player Controls (Zoom & Auto Scroll) -->
+                            <!-- Transpose Card -->
+                            <div class="transpose-card">
+                                <div class="transpose-header">
+                                    <h4>Transpose</h4>
+                                    <span class="transpose-badge" id="transpose-badge">Original</span>
+                                </div>
+                                <div class="transpose-controls">
+                                    <button class="btn btn-secondary btn-sm transpose-btn" id="btn-transpose-down" title="Lower by 1 semitone (-1)">
+                                        ♭ -1
+                                    </button>
+                                    <button class="btn btn-icon btn-sm transpose-reset-btn" id="btn-transpose-reset" title="Reset to original key">
+                                        ↺
+                                    </button>
+                                    <button class="btn btn-secondary btn-sm transpose-btn" id="btn-transpose-up" title="Raise by 1 semitone (+1)">
+                                        ♯ +1
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Player Controls (Zoom & Compact Inline Auto Scroll) -->
                             <div class="player-controls-card">
-                                <h4>Lyrics Player Controls</h4>
                                 <div class="control-row">
-                                    <span>Text Size:</span>
+                                    <span class="meta-label">Text Size:</span>
                                     <div class="zoom-controls">
                                         <button class="btn btn-icon btn-sm" id="btn-zoom-out">A-</button>
                                         <span class="zoom-value" id="zoom-level">16px</span>
                                         <button class="btn btn-icon btn-sm" id="btn-zoom-in">A+</button>
                                     </div>
                                 </div>
-                                <div class="control-row" style="margin-top: 12px;">
-                                    <button class="btn btn-primary btn-sm btn-icon-left full-width"
-                                        id="btn-scroll-toggle">
+                                <div class="control-row inline-autoscroll-row">
+                                    <button class="btn btn-primary btn-sm btn-icon-left" id="btn-scroll-toggle">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                             class="icon-sm icon-play">
                                             <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -421,19 +473,14 @@
                                             <rect x="6" y="4" width="4" height="16"></rect>
                                             <rect x="14" y="4" width="4" height="16"></rect>
                                         </svg>
-                                        <span id="scroll-btn-text">Auto-Scroll</span>
+                                        <span id="scroll-btn-text">Scroll</span>
                                     </button>
-                                </div>
-                                <div class="scroll-speed-row" style="margin-top: 10px;">
-                                    <div class="scroll-speed-control">
-                                        <label for="scroll-speed-slider">Speed: <span
-                                                id="scroll-speed-label">3x</span></label>
-                                        <input type="range" id="scroll-speed-slider" min="1" max="10" value="3">
+                                    <div class="scroll-speed-inline">
+                                        <span id="scroll-speed-label">3x</span>
+                                        <input type="range" id="scroll-speed-slider" min="1" max="10" value="3" title="Scroll Speed">
                                     </div>
                                 </div>
                             </div>
-
-
 
                             <!-- Chordify/External Links -->
                             <div class="external-links-card">
@@ -455,7 +502,7 @@
 
                             <!-- Control Panel Actions -->
                             <div class="action-buttons-card">
-                                <button class="btn btn-secondary full-width btn-icon-left" id="btn-edit-song">
+                                <button class="btn btn-secondary full-width btn-sm btn-icon-left" id="btn-edit-song">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                         class="icon-sm">
                                         <path d="M12 20h9"></path>
@@ -490,6 +537,70 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- VIEW: CHORDS LIBRARY -->
+            <section id="chords-view" class="view-section">
+                <div class="view-header chords-header">
+                    <div>
+                        <h2>Chords</h2>
+                        <p class="subtitle">Visual Guitar Chord Reference & Library</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-add-chord">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Chord
+                    </button>
+                </div>
+
+                <!-- Search & Filters Bar for Chords -->
+                <div class="filter-bar chords-filter-bar">
+                    <div class="filter-group-inline">
+                        <span class="filter-label">SEARCH</span>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="chords-search-input" placeholder="Search chord...">
+                        </div>
+                    </div>
+
+                    <div class="filter-group-inline" id="chords-filter-root">
+                        <span class="filter-label">ROOT</span>
+                        <button class="pill-btn active" data-value="all">All</button>
+                        <button class="pill-btn" data-value="C">C</button>
+                        <button class="pill-btn" data-value="D">D</button>
+                        <button class="pill-btn" data-value="E">E</button>
+                        <button class="pill-btn" data-value="F">F</button>
+                        <button class="pill-btn" data-value="G">G</button>
+                        <button class="pill-btn" data-value="A">A</button>
+                        <button class="pill-btn" data-value="B">B</button>
+                    </div>
+
+                    <div class="filter-group-inline" id="chords-filter-type">
+                        <span class="filter-label">TYPE</span>
+                        <button class="pill-btn active" data-value="all">All</button>
+                        <button class="pill-btn" data-value="Major">Major</button>
+                        <button class="pill-btn" data-value="Minor">Minor</button>
+                        <button class="pill-btn" data-value="7th">7th</button>
+                        <button class="pill-btn" data-value="Maj7">Maj7</button>
+                        <button class="pill-btn" data-value="Min7">Min7</button>
+                        <button class="pill-btn" data-value="Slash">Slash</button>
+                        <button class="pill-btn" data-value="Sus/Add">Sus/Add</button>
+                        <button class="pill-btn" data-value="Barre">Barre</button>
+                    </div>
+
+                    <button class="pill-btn clear-btn" id="btn-clear-chords-filters">Clear</button>
+                </div>
+
+                <!-- Subheader row with count -->
+                <div class="directory-subheader chords-subheader">
+                    <span class="songs-count" id="chords-count">0 chords</span>
+                </div>
+
+                <!-- Chords Card Grid -->
+                <div class="chords-grid" id="chords-grid">
+                    <!-- Dynamic Chord SVG Cards -->
                 </div>
             </section>
 
@@ -569,12 +680,163 @@
                 </div>
             </div>
 
+            <!-- MODAL: BACKUP / SYNC JSON -->
+            <div class="modal" id="backup-modal">
+                <div class="modal-content">
+                    <span class="modal-close" id="btn-close-backup-modal">&times;</span>
+                    <h2>Copia de Seguridad y Sincronización</h2>
+                    <p class="helper-text" style="margin-bottom: 16px;">
+                        Gestiona y sincroniza la base de datos de canciones (<code>songs_db.json</code>) con tu nube (MEGA, Google Drive, OneDrive).
+                    </p>
+
+                    <div class="backup-status-banner">
+                        <div class="status-item">
+                            <span class="status-label">Canciones en este servidor</span>
+                            <span class="status-value" id="backup-songs-count">0 canciones</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Última modificación en disco</span>
+                            <span class="status-value" id="backup-last-modified">Cargando...</span>
+                        </div>
+                    </div>
+
+                    <div class="backup-actions-grid">
+                        <div class="backup-card">
+                            <h3>📥 Exportar Base de Datos</h3>
+                            <p>Descarga una copia completa de tu repertorio en formato JSON o Excel/CSV para guardarla o llevarla al móvil.</p>
+                            <button class="btn btn-primary full-width" id="btn-export-json">Descargar songs_db.json</button>
+                            <button class="btn btn-secondary full-width btn-sm" id="btn-export-csv" style="margin-top: 10px;">Exportar como Excel/CSV</button>
+                        </div>
+
+                        <div class="backup-card">
+                            <h3>📤 Importar Base de Datos</h3>
+                            <p>Carga un archivo <code>songs_db.json</code> (desde MEGA, Drive o tu móvil) para sobreescribir y actualizar el servidor local.</p>
+                            <input type="file" id="input-import-json" accept=".json" style="display: none;">
+                            <button class="btn btn-secondary full-width" id="btn-trigger-import">Seleccionar songs_db.json</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: INTERACTIVE CHORD EDITOR -->
+            <div class="modal" id="chord-editor-modal">
+                <div class="modal-content chord-editor-modal-content">
+                    <span class="modal-close" id="btn-close-chord-modal">&times;</span>
+                    <h2 id="chord-modal-title">Interactive Chord Editor</h2>
+                    <p class="helper-text" style="margin-bottom: 20px;">
+                        Click directly on the fretboard below to place fingers or toggle open/muted strings.
+                    </p>
+
+                    <div class="chord-editor-layout">
+                        <!-- Left: Interactive Builder & Form -->
+                        <div class="chord-editor-controls">
+                            <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
+                                <div class="form-group">
+                                    <label for="chord-form-name">Chord Name *</label>
+                                    <input type="text" id="chord-form-name" placeholder="e.g. D/F#, Bm7" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="chord-form-root">Root Note *</label>
+                                    <select id="chord-form-root">
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                        <option value="E">E</option>
+                                        <option value="F">F</option>
+                                        <option value="G">G</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="chord-form-type">Type</label>
+                                    <select id="chord-form-type">
+                                        <option value="Major">Major</option>
+                                        <option value="Minor">Minor</option>
+                                        <option value="7th">7th</option>
+                                        <option value="Maj7">Major 7th (Maj7)</option>
+                                        <option value="Min7">Minor 7th (Min7)</option>
+                                        <option value="Slash">Slash / Compound (e.g. D/F#)</option>
+                                        <option value="Sus/Add">Suspended / Add (Sus2, Sus4, Add9)</option>
+                                        <option value="Barre">Barre Chord</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="chord-form-base-fret">Starting Fret (Base Fret)</label>
+                                    <select id="chord-form-base-fret">
+                                        <option value="1">1 (Nut / Open position)</option>
+                                        <option value="2">2 (2nd Fret)</option>
+                                        <option value="3">3 (3rd Fret)</option>
+                                        <option value="4">4 (4th Fret)</option>
+                                        <option value="5">5 (5th Fret)</option>
+                                        <option value="6">6 (6th Fret)</option>
+                                        <option value="7">7 (7th Fret)</option>
+                                        <option value="8">8 (8th Fret)</option>
+                                        <option value="9">9 (9th Fret)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Active Finger Selector Tool -->
+                            <div class="finger-picker-bar">
+                                <span class="filter-label">ACTIVE FINGER:</span>
+                                <button type="button" class="finger-btn active" data-finger="1">1</button>
+                                <button type="button" class="finger-btn" data-finger="2">2</button>
+                                <button type="button" class="finger-btn" data-finger="3">3</button>
+                                <button type="button" class="finger-btn" data-finger="4">4</button>
+                                <button type="button" class="finger-btn" data-finger="T">T</button>
+                            </div>
+                            <div class="finger-legend">
+                                <span><strong>1:</strong> Índice</span>
+                                <span><strong>2:</strong> Medio</span>
+                                <span><strong>3:</strong> Anular</span>
+                                <span><strong>4:</strong> Meñique</span>
+                                <span><strong>T:</strong> Pulgar</span>
+                            </div>
+
+                            <!-- Interactive Fretboard Visual Builder -->
+                            <div class="interactive-fretboard-container">
+                                <div class="fretboard-nut-row" id="fretboard-nut-row">
+                                    <!-- Nut clickers for strings 6 to 1 -->
+                                </div>
+                                <div class="interactive-fretboard" id="interactive-fretboard">
+                                    <!-- 5 Fret Rows x 6 Strings click cells -->
+                                </div>
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 20px;">
+                                <button type="button" class="btn btn-primary" id="btn-save-chord">Save Chord</button>
+                                <button type="button" class="btn btn-secondary" id="btn-cancel-chord">Cancel</button>
+                                <button type="button" class="btn btn-danger-outline btn-sm" id="btn-delete-chord" style="margin-left: auto; display: none;">Delete</button>
+                            </div>
+                        </div>
+
+                        <!-- Right: Live Real-time Diagram Preview -->
+                        <div class="chord-editor-preview">
+                            <h3>Live Preview</h3>
+                            <div class="preview-diagram-box" id="chord-live-preview">
+                                <!-- Real-time rendered SVG -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FLOATING CHORD PREVIEW POPOVER (for Song Viewer) -->
+            <div id="chord-preview-popover" class="chord-popover">
+                <div class="chord-popover-header">
+                    <span id="chord-popover-title">Chord</span>
+                    <span class="chord-popover-close" id="btn-close-chord-popover">&times;</span>
+                </div>
+                <div id="chord-popover-diagram"></div>
+            </div>
+
             <!-- Notification Toast -->
             <div id="toast" class="toast">Successfully updated!</div>
         </main>
     </div>
 
-    <!-- Application Script -->
+    <!-- Application Scripts -->
+    <script src="chord_renderer.js"></script>
     <script src="app.js"></script>
 </body>
 

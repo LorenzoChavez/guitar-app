@@ -58,3 +58,6 @@ desktop.ini
 .env.*.local
 secrets.json
 songs_db.json
+
+# ── Other files ─────────────────────────────────────────────────────
+android_app/*

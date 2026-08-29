@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 app = Flask(__name__, static_folder='static', static_url_path='')
 
 DB_FILE = 'songs_db.json'
+CHORDS_DB_FILE = 'chords_db.json'
 
 def load_db():
     if not os.path.exists(DB_FILE):
@@ -43,6 +44,25 @@ def save_db(songs):
         print(f"Error saving database: {e}")
         return False
 
+def load_chords_db():
+    if not os.path.exists(CHORDS_DB_FILE):
+        return []
+    try:
+        with open(CHORDS_DB_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading chords database: {e}")
+        return []
+
+def save_chords_db(chords):
+    try:
+        with open(CHORDS_DB_FILE, 'w', encoding='utf-8') as f:
+            json.dump(chords, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error saving chords database: {e}")
+        return False
+
 # Serve index.html at root
 @app.route('/')
 def serve_index():
@@ -53,6 +73,71 @@ def serve_index():
 def get_songs():
     songs = load_db()
     return jsonify(songs)
+
+@app.route('/api/db-status', methods=['GET'])
+def get_db_status():
+    songs = load_db()
+    last_mod = None
+    if os.path.exists(DB_FILE):
+        mtime = os.path.getmtime(DB_FILE)
+        dt = datetime.fromtimestamp(mtime)
+        last_mod = dt.strftime('%Y-%m-%d %H:%M:%S')
+    return jsonify({
+        "count": len(songs),
+        "last_modified": last_mod
+    })
+
+@app.route('/api/db-import', methods=['POST'])
+def import_db():
+    data = request.json
+    if not isinstance(data, list):
+        return jsonify({"success": False, "error": "Invalid format, expected list of songs"}), 400
+    
+    if save_db(data):
+        return jsonify({"success": True, "count": len(data)})
+    return jsonify({"success": False, "error": "Failed to save imported database"}), 500
+
+# Chords Endpoints
+@app.route('/api/chords', methods=['GET'])
+def get_chords():
+    return jsonify(load_chords_db())
+
+@app.route('/api/chords', methods=['POST'])
+def save_chord():
+    data = request.json
+    if not data or not data.get('name'):
+        return jsonify({"success": False, "error": "Chord name is required"}), 400
+    
+    chords = load_chords_db()
+    chord_id = data.get('id')
+    if not chord_id:
+        import re
+        chord_id = re.sub(r'[^a-zA-Z0-9]+', '-', data['name'].lower()).strip('-')
+        data['id'] = chord_id
+
+    # Check if updating existing
+    updated = False
+    for i, c in enumerate(chords):
+        if c.get('id') == chord_id or c.get('name').lower() == data['name'].lower():
+            chords[i] = data
+            updated = True
+            break
+    if not updated:
+        chords.append(data)
+    
+    if save_chords_db(chords):
+        return jsonify({"success": True, "chord": data})
+    return jsonify({"success": False, "error": "Failed to save chord"}), 500
+
+@app.route('/api/chords/<string:chord_id>', methods=['DELETE'])
+def delete_chord(chord_id):
+    chords = load_chords_db()
+    initial_len = len(chords)
+    chords = [c for c in chords if c.get('id') != chord_id and c.get('name') != chord_id]
+    if len(chords) < initial_len:
+        save_chords_db(chords)
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "Chord not found"}), 404
 
 @app.route('/api/songs/<int:song_id>/played', methods=['POST'])
 def mark_played(song_id):

@@ -26,12 +26,33 @@ class GuitarApp {
         this.dbFilterWarning = 'all';
         this.dbSortBy = 'days-desc';
 
+        // Song Viewer State
+        this.currentTransposeOffset = 0;
+
+        // Chords State
+        this.chords = [];
+        this.filterChordRoot = 'all';
+        this.filterChordType = 'all';
+        this.filterChordSearch = '';
+        this.activeChordEditing = null;
+        this.editorActiveFinger = '1';
+        this.editorChordState = {
+            name: '',
+            root: 'C',
+            type: 'Major',
+            base_fret: 1,
+            frets: [0, 0, 0, 0, 0, 0],
+            fingers: [0, 0, 0, 0, 0, 0],
+            barres: []
+        };
+
         this.init();
     }
 
     async init() {
         this.bindEvents();
         await this.fetchSongs();
+        await this.fetchChords();
         this.showView('dashboard-view');
     }
 
@@ -46,6 +67,17 @@ class GuitarApp {
             }
         } catch (err) {
             console.error("Connection error loading songs:", err);
+        }
+    }
+
+    async fetchChords() {
+        try {
+            const response = await fetch('/api/chords');
+            if (response.ok) {
+                this.chords = await response.json();
+            }
+        } catch (err) {
+            console.error("Connection error loading chords:", err);
         }
     }
 
@@ -143,6 +175,38 @@ class GuitarApp {
         // Sidebar Toggle
         document.getElementById('btn-toggle-sidebar').addEventListener('click', () => this.toggleSidebar());
 
+        // Backup Modal binds
+        const navBackup = document.getElementById('nav-backup');
+        if (navBackup) navBackup.addEventListener('click', () => this.openBackupModal());
+        const closeBackupBtn = document.getElementById('btn-close-backup-modal');
+        if (closeBackupBtn) closeBackupBtn.addEventListener('click', () => this.closeBackupModal());
+
+        const exportJsonBtn = document.getElementById('btn-export-json');
+        if (exportJsonBtn) exportJsonBtn.addEventListener('click', () => this.exportJson());
+
+        const exportCsvBtn = document.getElementById('btn-export-csv');
+        if (exportCsvBtn) exportCsvBtn.addEventListener('click', () => this.exportCsv());
+
+        const triggerImportBtn = document.getElementById('btn-trigger-import');
+        const inputImport = document.getElementById('input-import-json');
+        if (triggerImportBtn && inputImport) {
+            triggerImportBtn.addEventListener('click', () => inputImport.click());
+            inputImport.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    this.importJsonFile(e.target.files[0]);
+                    e.target.value = '';
+                }
+            });
+        }
+
+        // Close modal on outside backdrop click
+        window.addEventListener('click', (e) => {
+            const backupModal = document.getElementById('backup-modal');
+            if (e.target === backupModal) {
+                this.closeBackupModal();
+            }
+        });
+
         // Random Song from Tier badge click
         document.querySelectorAll('.tier-badge').forEach(badge => {
             badge.addEventListener('click', () => {
@@ -152,6 +216,14 @@ class GuitarApp {
                 }
             });
         });
+
+        // Transpose Controls
+        const btnTransDown = document.getElementById('btn-transpose-down');
+        if (btnTransDown) btnTransDown.addEventListener('click', () => this.transposeBy(-1));
+        const btnTransUp = document.getElementById('btn-transpose-up');
+        if (btnTransUp) btnTransUp.addEventListener('click', () => this.transposeBy(1));
+        const btnTransReset = document.getElementById('btn-transpose-reset');
+        if (btnTransReset) btnTransReset.addEventListener('click', () => this.resetTranspose());
 
         // Font Size Zoom Buttons
         document.getElementById('btn-zoom-in').addEventListener('click', () => this.adjustFontSize(1));
@@ -262,6 +334,96 @@ class GuitarApp {
                 this.renderDashboard();
             });
         }
+
+        // Chords Search & Filters
+        const chordSearchInput = document.getElementById('chords-search-input');
+        if (chordSearchInput) {
+            chordSearchInput.addEventListener('input', (e) => {
+                this.filterChordSearch = e.target.value;
+                this.renderChords();
+            });
+        }
+
+        document.querySelectorAll('#chords-filter-root .pill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#chords-filter-root .pill-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.filterChordRoot = e.currentTarget.getAttribute('data-value');
+                this.renderChords();
+            });
+        });
+
+        document.querySelectorAll('#chords-filter-type .pill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#chords-filter-type .pill-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.filterChordType = e.currentTarget.getAttribute('data-value');
+                this.renderChords();
+            });
+        });
+
+        const clearChordsBtn = document.getElementById('btn-clear-chords-filters');
+        if (clearChordsBtn) {
+            clearChordsBtn.addEventListener('click', () => {
+                this.filterChordRoot = 'all';
+                this.filterChordType = 'all';
+                this.filterChordSearch = '';
+                if (chordSearchInput) chordSearchInput.value = '';
+                document.querySelectorAll('#chords-filter-root .pill-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('#chords-filter-type .pill-btn').forEach(b => b.classList.remove('active'));
+                const rootAll = document.querySelector('#chords-filter-root .pill-btn[data-value="all"]');
+                const typeAll = document.querySelector('#chords-filter-type .pill-btn[data-value="all"]');
+                if (rootAll) rootAll.classList.add('active');
+                if (typeAll) typeAll.classList.add('active');
+                this.renderChords();
+            });
+        }
+
+        // Add Chord Button
+        const addChordBtn = document.getElementById('btn-add-chord');
+        if (addChordBtn) {
+            addChordBtn.addEventListener('click', () => this.openChordEditor());
+        }
+
+        // Chord Modal Actions
+        const closeChordModalBtn = document.getElementById('btn-close-chord-modal');
+        if (closeChordModalBtn) closeChordModalBtn.addEventListener('click', () => this.closeChordEditor());
+        const cancelChordBtn = document.getElementById('btn-cancel-chord');
+        if (cancelChordBtn) cancelChordBtn.addEventListener('click', () => this.closeChordEditor());
+        const saveChordBtn = document.getElementById('btn-save-chord');
+        if (saveChordBtn) saveChordBtn.addEventListener('click', () => this.saveChord());
+        const deleteChordBtn = document.getElementById('btn-delete-chord');
+        if (deleteChordBtn) deleteChordBtn.addEventListener('click', () => this.deleteActiveChord());
+
+        // Finger Picker Tool Buttons
+        document.querySelectorAll('.finger-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.finger-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.editorActiveFinger = e.currentTarget.getAttribute('data-finger');
+            });
+        });
+
+        // Form fields change live update
+        ['chord-form-name', 'chord-form-root', 'chord-form-type', 'chord-form-base-fret'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => this.updateLiveChordPreview());
+                el.addEventListener('change', () => this.updateLiveChordPreview());
+            }
+        });
+
+        // Close Chord Popover
+        const closePopoverBtn = document.getElementById('btn-close-chord-popover');
+        if (closePopoverBtn) {
+            closePopoverBtn.addEventListener('click', () => this.hideChordPopover());
+        }
+        document.addEventListener('click', (e) => {
+            const popover = document.getElementById('chord-preview-popover');
+            if (popover && popover.classList.contains('open') && !popover.contains(e.target) && !e.target.closest('.chord-quick-tag')) {
+                this.hideChordPopover();
+            }
+        });
     }
 
     showView(viewId) {
@@ -307,6 +469,9 @@ class GuitarApp {
             } else if (viewId === 'directory-view') {
                 titleElem.innerText = 'Song Directory';
                 subtitleElem.innerText = 'Full database with advanced searching and filters';
+            } else if (viewId === 'chords-view') {
+                titleElem.innerText = 'Chords';
+                subtitleElem.innerText = 'Guitar chord library and interactive fretboard';
             } else if (viewId === 'add-view') {
                 titleElem.innerText = 'Add New Song';
                 subtitleElem.innerText = 'Expand your customized song library';
@@ -321,6 +486,8 @@ class GuitarApp {
             this.renderDashboard();
         } else if (viewId === 'directory-view') {
             this.renderDirectory();
+        } else if (viewId === 'chords-view') {
+            this.renderChords();
         }
     }
 
@@ -342,6 +509,93 @@ class GuitarApp {
         setTimeout(() => {
             toast.classList.remove('show');
         }, 3000);
+    }
+
+    // BACKUP & SYNC MODAL
+    async openBackupModal() {
+        const modal = document.getElementById('backup-modal');
+        const countEl = document.getElementById('backup-songs-count');
+        const dateEl = document.getElementById('backup-last-modified');
+
+        if (countEl) countEl.innerText = `${this.songs.length} canciones`;
+
+        if (modal) {
+            modal.classList.add('open');
+            modal.style.display = 'block';
+        }
+
+        try {
+            const res = await fetch('/api/db-status');
+            if (res.ok) {
+                const data = await res.json();
+                if (countEl && data.count !== undefined) countEl.innerText = `${data.count} canciones`;
+                if (dateEl && data.last_modified) {
+                    const d = new Date(data.last_modified.replace(' ', 'T'));
+                    dateEl.innerText = isNaN(d) ? data.last_modified : d.toLocaleString('es-ES', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching db status:", err);
+        }
+    }
+
+    closeBackupModal() {
+        const modal = document.getElementById('backup-modal');
+        if (modal) {
+            modal.classList.remove('open');
+            modal.style.display = 'none';
+        }
+    }
+
+    exportJson() {
+        const dataStr = JSON.stringify(this.songs, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `songs_db.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.showToast("Base de datos exportada (songs_db.json)");
+    }
+
+    exportCsv() {
+        window.location.href = '/api/export';
+    }
+
+    async importJsonFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    const res = await fetch('/api/db-import', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(imported)
+                    });
+                    if (res.ok) {
+                        await this.loadSongs();
+                        this.closeBackupModal();
+                        this.showToast(`¡Importadas ${imported.length} canciones con éxito!`);
+                    } else {
+                        this.showToast("Error al guardar en el servidor", false);
+                    }
+                } else {
+                    this.showToast("Error: El archivo JSON debe ser una lista de canciones", false);
+                }
+            } catch (err) {
+                console.error("Error parsing imported JSON:", err);
+                this.showToast("Error al procesar el archivo JSON", false);
+            }
+        };
+        reader.readAsText(file);
     }
 
     // SIDEBAR COLLAPSE / EXPAND
@@ -452,7 +706,34 @@ class GuitarApp {
 
             totalFiltered += tierSongs.length;
 
-            // Update the count badge
+            // Calculate criticality counts for this tier
+            let critZero = 0;
+            let critLow = 0;
+            let critHigh = 0;
+
+            tierSongs.forEach(s => {
+                if (s.last_played) {
+                    if (s.days > 60) {
+                        critHigh++;
+                    } else if (s.days >= 25) {
+                        critLow++;
+                    } else {
+                        critZero++;
+                    }
+                } else {
+                    critHigh++;
+                }
+            });
+
+            // Update criticality badge counters
+            const elZero = document.getElementById(`tier-crit-zero-${tier}`);
+            const elLow = document.getElementById(`tier-crit-low-${tier}`);
+            const elHigh = document.getElementById(`tier-crit-high-${tier}`);
+            if (elZero) elZero.innerText = critZero;
+            if (elLow) elLow.innerText = critLow;
+            if (elHigh) elHigh.innerText = critHigh;
+
+            // Update the total count badge
             const countBadge = document.getElementById(`tier-count-${tier}`);
             if (countBadge) {
                 countBadge.innerText = tierSongs.length;
@@ -722,7 +1003,11 @@ class GuitarApp {
         // Metadata fill
         document.getElementById('view-song-title').innerText = song.title;
         document.getElementById('view-song-artist').innerText = song.artist;
-        document.getElementById('view-song-chords').innerText = song.chords || 'No chords defined.';
+        
+        // Reset transpose state
+        this.currentTransposeOffset = 0;
+        this.updateTransposeUI();
+        this.renderSongChords(song);
 
         // Days & last played
         document.getElementById('view-song-days').innerText = song.last_played ? song.days : 'Never';
@@ -829,6 +1114,76 @@ class GuitarApp {
             console.error("Error saving levels:", err);
             this.showToast("Network error saving levels", false);
         }
+    }
+
+    // =========================================================================
+    // DYNAMIC TRANSPOSE CONTROLS
+    // =========================================================================
+
+    transposeBy(delta) {
+        this.currentTransposeOffset += delta;
+        if (this.currentTransposeOffset > 11) this.currentTransposeOffset -= 12;
+        if (this.currentTransposeOffset < -11) this.currentTransposeOffset += 12;
+        this.updateTransposeUI();
+    }
+
+    resetTranspose() {
+        this.currentTransposeOffset = 0;
+        this.updateTransposeUI();
+    }
+
+    updateTransposeUI() {
+        const badge = document.getElementById('transpose-badge');
+        if (badge) {
+            if (this.currentTransposeOffset === 0) {
+                badge.innerText = 'Original';
+            } else if (this.currentTransposeOffset > 0) {
+                badge.innerText = `+${this.currentTransposeOffset}`;
+            } else {
+                badge.innerText = `${this.currentTransposeOffset}`;
+            }
+            badge.style.color = 'var(--accent)';
+        }
+
+        const song = this.songs.find(s => s.id === this.currentSongId);
+        if (song) {
+            this.renderSongChords(song);
+        }
+    }
+
+    renderSongChords(song) {
+        const chordsContainer = document.getElementById('view-song-chords');
+        if (!chordsContainer) return;
+        if (!song || !song.chords) {
+            chordsContainer.innerText = 'No chords defined';
+            return;
+        }
+
+        const rawChords = song.chords;
+        const transposedText = transposeChordsString(rawChords, this.currentTransposeOffset);
+
+        // Split by tokens preserving delimiters (spaces, commas, hyphens, bars)
+        const tokens = transposedText.split(/([\s,\-]+|\/|\|\||\|)/).filter(t => t && t.length > 0);
+
+        chordsContainer.innerHTML = '';
+        tokens.forEach(token => {
+            const trimmed = token.trim();
+            if (trimmed.length > 0 && /^[A-G][#b]?/.test(trimmed)) {
+                const tag = document.createElement('span');
+                tag.className = 'chord-quick-tag';
+                tag.setAttribute('data-chord', trimmed);
+                tag.innerText = trimmed;
+                tag.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showChordPopover(trimmed, e.clientX, e.clientY);
+                });
+                chordsContainer.appendChild(tag);
+            } else {
+                const span = document.createElement('span');
+                span.innerText = token;
+                chordsContainer.appendChild(span);
+            }
+        });
     }
 
     async markCurrentSongPlayed() {
@@ -1131,6 +1486,383 @@ class GuitarApp {
         document.querySelector('.icon-pause').style.display = 'none';
         document.getElementById('scroll-btn-text').innerText = 'Auto-Scroll';
     }
+
+    // =========================================================================
+    // CHORDS LIBRARY & INTERACTIVE FRETBOARD CONTROLLER
+    // =========================================================================
+
+    renderChords() {
+        const grid = document.getElementById('chords-grid');
+        const countElem = document.getElementById('chords-count');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        let filtered = this.chords.filter(chord => {
+            // Root filter
+            if (this.filterChordRoot !== 'all' && chord.root !== this.filterChordRoot) {
+                return false;
+            }
+
+            // Type filter
+            if (this.filterChordType !== 'all' && chord.type !== this.filterChordType) {
+                return false;
+            }
+
+            // Search query filter
+            if (this.filterChordSearch) {
+                const q = this.filterChordSearch.toLowerCase().trim();
+                const nameMatch = (chord.name || '').toLowerCase().includes(q);
+                const rootMatch = (chord.root || '').toLowerCase().includes(q);
+                const typeMatch = (chord.type || '').toLowerCase().includes(q);
+                if (!nameMatch && !rootMatch && !typeMatch) return false;
+            }
+
+            return true;
+        });
+
+        if (countElem) {
+            countElem.innerText = `${filtered.length} chords`;
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="helper-text" style="grid-column: 1 / -1; text-align: center; padding: 40px;">No chords match your current search or filters.</div>`;
+            return;
+        }
+
+        // Sort alphabetically by chord name
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        filtered.forEach(chord => {
+            const card = document.createElement('div');
+            card.className = 'chord-card';
+            card.title = `Click to edit ${chord.name}`;
+
+            const svgHTML = ChordRenderer.renderSVG(chord, { width: 140, height: 170, showTitle: true });
+
+            card.innerHTML = `
+                <div class="chord-card-svg-container">
+                    ${svgHTML}
+                </div>
+                <div class="chord-card-meta">
+                    <span class="chord-type-pill">${escapeHTML(chord.type || 'Standard')}</span>
+                </div>
+            `;
+
+            // Click card to open chord editor
+            card.addEventListener('click', () => {
+                this.openChordEditor(chord);
+            });
+
+            grid.appendChild(card);
+        });
+    }
+
+    openChordEditor(chord = null) {
+        const modal = document.getElementById('chord-editor-modal');
+        const titleEl = document.getElementById('chord-modal-title');
+        const deleteBtn = document.getElementById('btn-delete-chord');
+
+        if (chord) {
+            this.activeChordEditing = chord.id || chord.name;
+            if (titleEl) titleEl.innerText = `Edit Chord: ${chord.name}`;
+            if (deleteBtn) deleteBtn.style.display = 'inline-block';
+
+            this.editorChordState = {
+                id: chord.id || chord.name,
+                name: chord.name || '',
+                root: chord.root || 'C',
+                type: chord.type || 'Major',
+                base_fret: chord.base_fret || 1,
+                frets: [...(chord.frets || [-1, -1, -1, -1, -1, -1])],
+                fingers: [...(chord.fingers || [0, 0, 0, 0, 0, 0])],
+                barres: chord.barres ? [...chord.barres] : []
+            };
+        } else {
+            this.activeChordEditing = null;
+            if (titleEl) titleEl.innerText = 'New Chord';
+            if (deleteBtn) deleteBtn.style.display = 'none';
+
+            this.editorChordState = {
+                name: '',
+                root: 'C',
+                type: 'Major',
+                base_fret: 1,
+                frets: [0, 0, 0, 0, 0, 0],
+                fingers: [0, 0, 0, 0, 0, 0],
+                barres: []
+            };
+        }
+
+        // Populate form inputs
+        document.getElementById('chord-form-name').value = this.editorChordState.name;
+        document.getElementById('chord-form-root').value = this.editorChordState.root;
+        document.getElementById('chord-form-type').value = this.editorChordState.type;
+        document.getElementById('chord-form-base-fret').value = this.editorChordState.base_fret;
+
+        // Reset active finger tool
+        this.editorActiveFinger = '1';
+        document.querySelectorAll('.finger-btn').forEach(b => b.classList.remove('active'));
+        const f1 = document.querySelector('.finger-btn[data-finger="1"]');
+        if (f1) f1.classList.add('active');
+
+        this.renderInteractiveFretboard();
+        this.updateLiveChordPreview();
+
+        if (modal) {
+            modal.classList.add('open');
+            modal.style.display = 'block';
+        }
+    }
+
+    closeChordEditor() {
+        const modal = document.getElementById('chord-editor-modal');
+        if (modal) {
+            modal.classList.remove('open');
+            modal.style.display = 'none';
+        }
+    }
+
+    renderInteractiveFretboard() {
+        const nutRow = document.getElementById('fretboard-nut-row');
+        const fretboard = document.getElementById('interactive-fretboard');
+        if (!nutRow || !fretboard) return;
+
+        nutRow.innerHTML = '';
+        fretboard.innerHTML = '';
+
+        const baseFret = this.editorChordState.base_fret || 1;
+        if (baseFret === 1) {
+            nutRow.style.borderBottom = '6px solid #f0f2f5';
+        } else {
+            nutRow.style.borderBottom = '2px solid #666a73';
+        }
+
+        const stringLabels = ['6 (E)', '5 (A)', '4 (D)', '3 (G)', '2 (B)', '1 (e)'];
+
+        // 1. Nut Row (Strings 6 to 1)
+        for (let s = 0; s < 6; s++) {
+            const nutCell = document.createElement('div');
+            nutCell.className = 'nut-cell';
+
+            const fretVal = this.editorChordState.frets[s];
+            if (fretVal === -1) {
+                nutCell.classList.add('state-muted');
+                nutCell.innerHTML = '✕';
+                nutCell.title = `String ${stringLabels[s]}: Muted (Click to make open)`;
+            } else if (fretVal === 0) {
+                nutCell.classList.add('state-open');
+                nutCell.innerHTML = '○';
+                nutCell.title = `String ${stringLabels[s]}: Open (Click to mute)`;
+            } else {
+                nutCell.classList.add('state-fretted');
+                nutCell.innerHTML = '';
+                nutCell.title = `String ${stringLabels[s]}: Fretted at fret ${fretVal} (Click to open)`;
+            }
+
+            nutCell.addEventListener('click', () => {
+                if (this.editorChordState.frets[s] === -1) {
+                    this.editorChordState.frets[s] = 0;
+                    this.editorChordState.fingers[s] = 0;
+                } else if (this.editorChordState.frets[s] === 0) {
+                    this.editorChordState.frets[s] = -1;
+                    this.editorChordState.fingers[s] = 0;
+                } else {
+                    this.editorChordState.frets[s] = 0;
+                    this.editorChordState.fingers[s] = 0;
+                }
+                this.renderInteractiveFretboard();
+                this.updateLiveChordPreview();
+            });
+
+            nutRow.appendChild(nutCell);
+        }
+
+        // 2. Fret Rows (Frets 1 to 5)
+        for (let f = 1; f <= 5; f++) {
+            const fretRow = document.createElement('div');
+            fretRow.className = 'fret-row';
+
+            for (let s = 0; s < 6; s++) {
+                const cell = document.createElement('div');
+                cell.className = 'fret-cell';
+                cell.title = `String ${stringLabels[s]}, Fret ${f}`;
+
+                if (this.editorChordState.frets[s] === f) {
+                    const finger = this.editorChordState.fingers[s] || '1';
+                    const marker = document.createElement('div');
+                    marker.className = 'fret-dot-marker';
+                    marker.innerText = finger;
+                    cell.appendChild(marker);
+                }
+
+                cell.addEventListener('click', () => {
+                    if (this.editorActiveFinger === '0') {
+                        // Erase mode
+                        if (this.editorChordState.frets[s] === f) {
+                            this.editorChordState.frets[s] = 0;
+                            this.editorChordState.fingers[s] = 0;
+                        }
+                    } else {
+                        // Toggle or set finger
+                        if (this.editorChordState.frets[s] === f && this.editorChordState.fingers[s] === this.editorActiveFinger) {
+                            // Clicking same finger again removes it
+                            this.editorChordState.frets[s] = 0;
+                            this.editorChordState.fingers[s] = 0;
+                        } else {
+                            this.editorChordState.frets[s] = f;
+                            this.editorChordState.fingers[s] = this.editorActiveFinger;
+                        }
+                    }
+
+                    this.renderInteractiveFretboard();
+                    this.updateLiveChordPreview();
+                });
+
+                fretRow.appendChild(cell);
+            }
+
+            fretboard.appendChild(fretRow);
+        }
+    }
+
+    updateLiveChordPreview() {
+        this.editorChordState.name = document.getElementById('chord-form-name').value.trim();
+        this.editorChordState.root = document.getElementById('chord-form-root').value;
+        this.editorChordState.type = document.getElementById('chord-form-type').value;
+        this.editorChordState.base_fret = parseInt(document.getElementById('chord-form-base-fret').value) || 1;
+
+        const previewContainer = document.getElementById('chord-live-preview');
+        if (previewContainer) {
+            const svgHTML = ChordRenderer.renderSVG(this.editorChordState, { width: 170, height: 210, showTitle: true });
+            previewContainer.innerHTML = svgHTML;
+        }
+    }
+
+    async saveChord() {
+        const name = document.getElementById('chord-form-name').value.trim();
+        if (!name) {
+            this.showToast("Please enter a chord name (e.g. D/F#)", false);
+            return;
+        }
+
+        this.updateLiveChordPreview();
+
+        const detectedBarres = ChordRenderer.detectBarres(this.editorChordState);
+
+        const payload = {
+            id: this.activeChordEditing || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+            name: this.editorChordState.name,
+            root: this.editorChordState.root,
+            type: this.editorChordState.type,
+            base_fret: this.editorChordState.base_fret,
+            frets: this.editorChordState.frets,
+            fingers: this.editorChordState.fingers,
+            barres: detectedBarres.map(b => b.fret)
+        };
+
+        try {
+            const response = await fetch('/api/chords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                await this.fetchChords();
+                this.renderChords();
+                this.closeChordEditor();
+                this.showToast(`Chord "${payload.name}" saved!`);
+            } else {
+                this.showToast("Failed to save chord", false);
+            }
+        } catch (err) {
+            console.error("Error saving chord:", err);
+            this.showToast("Connection error saving chord", false);
+        }
+    }
+
+    async deleteActiveChord() {
+        if (!this.activeChordEditing) return;
+        await this.deleteChord(this.activeChordEditing);
+        this.closeChordEditor();
+    }
+
+    async deleteChord(chordId) {
+        if (!confirm(`Are you sure you want to delete this chord?`)) return;
+
+        try {
+            const response = await fetch(`/api/chords/${encodeURIComponent(chordId)}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                await this.fetchChords();
+                this.renderChords();
+                this.showToast("Chord deleted");
+            } else {
+                this.showToast("Failed to delete chord", false);
+            }
+        } catch (err) {
+            console.error("Error deleting chord:", err);
+            this.showToast("Connection error deleting chord", false);
+        }
+    }
+
+    showChordPopover(chordName, clientX, clientY) {
+        if (!chordName) return;
+        const normalized = chordName.trim();
+        const chord = this.chords.find(c => (c.name || '').toLowerCase() === normalized.toLowerCase() || (c.id || '') === normalized.toLowerCase());
+
+        const popover = document.getElementById('chord-preview-popover');
+        const titleEl = document.getElementById('chord-popover-title');
+        const diagramEl = document.getElementById('chord-popover-diagram');
+
+        if (!popover || !diagramEl) return;
+
+        if (chord) {
+            if (titleEl) titleEl.innerText = chord.name;
+            diagramEl.innerHTML = ChordRenderer.renderSVG(chord, { width: 160, height: 190, showTitle: false });
+        } else {
+            if (titleEl) titleEl.innerText = normalized;
+            diagramEl.innerHTML = `<div style="padding: 20px; font-size: 0.85rem; color: var(--text-muted); text-align:center;">Chord "${escapeHTML(normalized)}" not in library.<br><a href="#" id="btn-quick-create-chord" style="color:var(--accent); font-weight:600; text-decoration:underline; display:inline-block; margin-top:8px;">+ Add to Library</a></div>`;
+            
+            setTimeout(() => {
+                const addBtn = document.getElementById('btn-quick-create-chord');
+                if (addBtn) {
+                    addBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.hideChordPopover();
+                        this.openChordEditor({ name: normalized, root: normalized.charAt(0).toUpperCase() });
+                    });
+                }
+            }, 50);
+        }
+
+        // Position popover
+        const popoverWidth = 200;
+        const popoverHeight = 240;
+        let x = clientX + 12;
+        let y = clientY - 40;
+
+        if (x + popoverWidth > window.innerWidth) {
+            x = clientX - popoverWidth - 12;
+        }
+        if (y + popoverHeight > window.innerHeight) {
+            y = window.innerHeight - popoverHeight - 16;
+        }
+        if (y < 10) y = 10;
+        if (x < 10) x = 10;
+
+        popover.style.left = `${x}px`;
+        popover.style.top = `${y}px`;
+        popover.classList.add('open');
+    }
+
+    hideChordPopover() {
+        const popover = document.getElementById('chord-preview-popover');
+        if (popover) popover.classList.remove('open');
+    }
 }
 
 // UTILITY FUNCTIONS
@@ -1184,6 +1916,56 @@ function getStarHTML(level) {
     }
     html += '</span>';
     return html;
+}
+
+// CHORD TRANSPOSITION UTILITIES
+const CHROMATIC_SHARPS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const CHROMATIC_FLATS  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const NOTE_SEMITONES = {
+    'C': 0, 'B#': 0,
+    'C#': 1, 'Db': 1,
+    'D': 2,
+    'D#': 3, 'Eb': 3,
+    'E': 4, 'Fb': 4,
+    'F': 5, 'E#': 5,
+    'F#': 6, 'Gb': 6,
+    'G': 7,
+    'G#': 8, 'Ab': 8,
+    'A': 9,
+    'A#': 10, 'Bb': 10,
+    'B': 11, 'Cb': 11
+};
+
+function transposeNote(note, semitones) {
+    if (!NOTE_SEMITONES.hasOwnProperty(note)) return note;
+    let idx = (NOTE_SEMITONES[note] + semitones) % 12;
+    if (idx < 0) idx += 12;
+    return note.includes('b') ? CHROMATIC_FLATS[idx] : CHROMATIC_SHARPS[idx];
+}
+
+function transposeSingleChord(chord, semitones) {
+    if (!chord || semitones === 0) return chord;
+    if (chord.includes('/')) {
+        const parts = chord.split('/');
+        if (parts.length === 2) {
+            const transposedMain = transposeSingleChord(parts[0], semitones);
+            const bassMatch = parts[1].match(/^([A-G][#b]?)(.*)$/);
+            if (bassMatch) {
+                return `${transposedMain}/${transposeNote(bassMatch[1], semitones)}${bassMatch[2]}`;
+            }
+            return `${transposedMain}/${parts[1]}`;
+        }
+    }
+    const match = chord.match(/^([A-G][#b]?)(.*)$/);
+    if (!match) return chord;
+    return transposeNote(match[1], semitones) + match[2];
+}
+
+function transposeChordsString(chordsStr, semitones) {
+    if (!chordsStr || semitones === 0) return chordsStr;
+    return chordsStr.replace(/([A-G][#b]?(?:[a-zA-Z0-9#+°ø/]*))/g, (match) => {
+        return transposeSingleChord(match, semitones);
+    });
 }
 
 // Instantiate App
