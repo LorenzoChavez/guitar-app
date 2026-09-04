@@ -61,6 +61,14 @@
                     </svg>
                     <span>Chords</span>
                 </button>
+                <button class="nav-item" data-target="strums-view" id="nav-strums">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
+                        <polyline points="7 13 12 18 17 13"></polyline>
+                        <polyline points="7 6 12 11 17 6"></polyline>
+                        <line x1="12" y1="18" x2="12" y2="6"></line>
+                    </svg>
+                    <span>Strums</span>
+                </button>
                 <button class="nav-item" data-target="add-view" id="nav-add">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="nav-icon">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -367,6 +375,14 @@
                             </div>
 
                             <div class="form-group full-width">
+                                <label for="form-strums">Strum Pattern(s)</label>
+                                <select id="form-strums" multiple class="multi-select-strums">
+                                    <!-- Injected dynamically from this.strums -->
+                                </select>
+                                <small class="helper-text">Mantén pulsado Ctrl para seleccionar uno o varios rasgueos asociados a la canción.</small>
+                            </div>
+
+                            <div class="form-group full-width">
                                 <label for="form-lyrics">Lyrics & Chords Text</label>
                                 <textarea id="form-lyrics" rows="15"
                                     placeholder="Write lyrics here. You can put chords above the lines.&#13;Example:&#13;   G         D&#13;Today is gonna be the day..."></textarea>
@@ -458,6 +474,27 @@
                                     <button class="btn btn-secondary btn-sm transpose-btn" id="btn-transpose-up" title="Raise by 1 semitone (+1)">
                                         ♯ +1
                                     </button>
+                                </div>
+                            </div>
+
+                            <!-- Strums Action Card (Opens Floating Popup) -->
+                            <div class="transpose-card song-strums-sidebar-card" id="song-strums-sidebar-card">
+                                <div class="transpose-header">
+                                    <h4>Strums</h4>
+                                    <span class="transpose-badge" id="view-song-strums-badge">0</span>
+                                </div>
+                                <div class="strums-sidebar-actions">
+                                    <button class="btn btn-secondary full-width btn-sm btn-icon-left" id="btn-open-song-strums" title="Ver rasgueos asignados a esta canción">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-sm">
+                                            <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+                                        </svg>
+                                        <span id="btn-open-song-strums-text">Strums</span>
+                                    </button>
+                                </div>
+                                <div class="sidebar-strum-playing-bar" id="sidebar-strum-playing-bar" style="display: none;">
+                                    <span class="strum-playing-pulse"></span>
+                                    <span class="strum-playing-label" id="sidebar-strum-playing-title">Audio</span>
+                                    <button type="button" class="btn-sidebar-stop-strum" id="btn-sidebar-stop-strum" title="Detener audio">✕</button>
                                 </div>
                             </div>
 
@@ -613,6 +650,61 @@
                 </div>
             </section>
 
+            <!-- VIEW: STRUMS LIBRARY -->
+            <section id="strums-view" class="view-section">
+                <div class="view-header strums-header">
+                    <div>
+                        <h2>Strums</h2>
+                        <p class="subtitle">Visual Strumming Patterns & Audio Rhythm Player</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" id="btn-add-strum">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Strum
+                    </button>
+                </div>
+
+                <!-- Search & Filters Bar for Strums -->
+                <div class="filter-bar strums-filter-bar">
+                    <div class="filter-group-inline">
+                        <span class="filter-label">SEARCH</span>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="strums-search-input" placeholder="Search strumming pattern...">
+                        </div>
+                    </div>
+
+                    <div class="filter-group-inline" id="strums-filter-time">
+                        <span class="filter-label">COMPÁS</span>
+                        <button class="pill-btn active" data-value="all">All</button>
+                        <button class="pill-btn" data-value="4/4">4/4</button>
+                        <button class="pill-btn" data-value="3/4">3/4</button>
+                        <button class="pill-btn" data-value="6/8">6/8</button>
+                    </div>
+
+                    <div class="filter-group-inline" id="strums-filter-diff">
+                        <span class="filter-label">DIFICULTAD</span>
+                        <button class="pill-btn active" data-value="all">All</button>
+                        <button class="pill-btn" data-value="Básico">Básico</button>
+                        <button class="pill-btn" data-value="Intermedio">Intermedio</button>
+                        <button class="pill-btn" data-value="Avanzado">Avanzado</button>
+                    </div>
+
+                    <button class="pill-btn clear-btn" id="btn-clear-strums-filters">Clear</button>
+                </div>
+
+                <!-- Subheader row with count -->
+                <div class="directory-subheader strums-subheader">
+                    <span class="songs-count" id="strums-count">0 patterns</span>
+                </div>
+
+                <!-- Strums Card Grid -->
+                <div class="strums-grid" id="strums-grid">
+                    <!-- Dynamic Strum Cards injected by JS -->
+                </div>
+            </section>
+
             <!-- MODAL: EDIT SONG DETAILS -->
             <div class="modal" id="edit-song-modal">
                 <div class="modal-content">
@@ -671,6 +763,14 @@
                             <div class="form-group full-width">
                                 <label for="edit-form-chords">Chords Summary / Quick Ref</label>
                                 <input type="text" id="edit-form-chords">
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="edit-form-strums">Strum Pattern(s)</label>
+                                <select id="edit-form-strums" multiple class="multi-select-strums">
+                                    <!-- Injected dynamically from this.strums -->
+                                </select>
+                                <small class="helper-text">Mantén pulsado Ctrl para seleccionar uno o varios rasgueos asociados a la canción.</small>
                             </div>
 
                             <div class="form-group full-width">
@@ -830,6 +930,135 @@
                 </div>
             </div>
 
+            <!-- MODAL: INTERACTIVE STRUM EDITOR -->
+            <div class="modal" id="strum-editor-modal">
+                <div class="modal-content strum-editor-modal-content">
+                    <span class="modal-close" id="btn-close-strum-modal">&times;</span>
+                    <h2 id="strum-modal-title">Interactive Strum Editor</h2>
+                    <p class="helper-text" style="margin-bottom: 20px;">
+                        Diseña tu patrón rítmico haciendo clic en los tiempos del compás y adjunta una muestra de audio si lo deseas.
+                    </p>
+
+                    <div class="strum-editor-form">
+                        <div class="form-grid strum-editor-grid">
+                            <div class="form-group full-width">
+                                <label for="strum-form-name">Strum Name *</label>
+                                <input type="text" id="strum-form-name" placeholder="e.g. Pop Rock Acústico" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="strum-form-time">Time Signature</label>
+                                <select id="strum-form-time">
+                                    <option value="4/4">4/4 (8 tiempos / corcheas)</option>
+                                    <option value="3/4">3/4 (6 tiempos / vals)</option>
+                                    <option value="6/8">6/8 (6 tiempos / balada)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="strum-form-bpm">Suggested BPM</label>
+                                <input type="number" id="strum-form-bpm" placeholder="e.g. 95" min="40" max="240">
+                            </div>
+                            <div class="form-group">
+                                <label for="strum-form-diff">Difficulty</label>
+                                <select id="strum-form-diff">
+                                    <option value="Básico">Básico</option>
+                                    <option value="Intermedio">Intermedio</option>
+                                    <option value="Avanzado">Avanzado</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="strum-form-desc">Description / Tips</label>
+                                <input type="text" id="strum-form-desc" placeholder="e.g. Ideal para canciones pop de tempo medio.">
+                            </div>
+                        </div>
+
+                        <!-- Stroke Picker Tool Palette (Perfect Alignment) -->
+                        <div class="stroke-tool-bar">
+                            <div class="stroke-tool-left">
+                                <span class="filter-label">HERRAMIENTA:</span>
+                                <div class="stroke-buttons-group">
+                                    <button type="button" class="stroke-btn active" data-stroke="down" title="Rasgueo hacia abajo">↓ Abajo</button>
+                                    <button type="button" class="stroke-btn" data-stroke="up" title="Rasgueo hacia arriba">↑ Arriba</button>
+                                    <button type="button" class="stroke-btn" data-stroke="slap" title="Apagado / Slap con la palma">✕ Apagado</button>
+                                    <button type="button" class="stroke-btn" data-stroke="bass" title="Toque de bordonas / cuerdas graves">↓b Bordonas</button>
+                                    <button type="button" class="stroke-btn" data-stroke="treble" title="Toque de cuerdas agudas">↑a Agudas</button>
+                                    <button type="button" class="stroke-btn stroke-btn-rest" data-stroke="rest" title="Quitar flecha / Silencio">· Silencio (Borrar)</button>
+                                </div>
+                            </div>
+                            <div class="stroke-tool-right">
+                                <label class="accent-toggle-label" title="Acentuar golpe (>)">
+                                    <input type="checkbox" id="stroke-tool-accent">
+                                    <span>Acento (>)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Rhythm Strip Builder with Add/Remove Flechas Controls -->
+                        <div class="interactive-strum-builder-wrap">
+                            <div class="builder-strip-header">
+                                <div>
+                                    <label class="meta-label" style="display:block;">Tira Rítmica (<span id="builder-steps-count">8</span> tiempos):</label>
+                                    <p class="helper-text" style="margin: 2px 0 0 0; font-size: 0.78rem;">
+                                        Haz clic en una casilla para asignar el golpe activo. Vuelve a hacer clic para quitarlo (silencio).
+                                    </p>
+                                </div>
+                                <div class="builder-strip-controls">
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-builder-remove-step" title="Quitar el último tiempo / flecha">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Quitar flecha
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-builder-add-step" title="Añadir una flecha / tiempo al final">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Añadir flecha
+                                    </button>
+                                    <button type="button" class="btn btn-outline btn-sm" id="btn-builder-clear-all" title="Poner todas las flechas en silencio">
+                                        Vaciar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="interactive-strum-builder" id="interactive-strum-builder">
+                                <!-- Slots injected dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Audio Upload Section -->
+                        <div class="strum-audio-upload-section">
+                            <label class="meta-label">Audio de Muestra (MP3, WAV, M4A, OGG):</label>
+                            <div class="audio-upload-box">
+                                <input type="file" id="strum-audio-file-input" accept=".mp3,.wav,.m4a,.ogg,.aac,.flac" style="display: none;">
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-browse-strum-audio">
+                                    📁 Seleccionar Archivo
+                                </button>
+                                <span class="audio-filename-display" id="strum-audio-filename">Sin audio cargado</span>
+                                <button type="button" class="btn-clear-audio" id="btn-clear-strum-audio" style="display: none;" title="Quitar audio">✕</button>
+                            </div>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 24px;">
+                            <button type="button" class="btn btn-primary" id="btn-save-strum">Guardar Rasgueo</button>
+                            <button type="button" class="btn btn-secondary" id="btn-cancel-strum">Cancelar</button>
+                            <button type="button" class="btn btn-danger-outline btn-sm" id="btn-delete-modal-strum" style="margin-left: auto; display: none;">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: SONG STRUMS POPUP -->
+            <div class="modal" id="song-strums-modal">
+                <div class="modal-content song-strums-modal-content">
+                    <span class="modal-close" id="btn-close-song-strums-modal">&times;</span>
+                    <div class="modal-header-with-badge">
+                        <div>
+                            <h2 id="song-strums-modal-title">Strum Patterns</h2>
+                            <p class="subtitle" id="song-strums-modal-subtitle">Patrones de rasgueo para esta canción</p>
+                        </div>
+                    </div>
+
+                    <div class="song-strums-modal-body" id="song-strums-modal-body">
+                        <!-- Injected dynamic strum cards or empty state -->
+                    </div>
+                </div>
+            </div>
+
             <!-- FLOATING CHORD PREVIEW POPOVER (for Song Viewer) -->
             <div id="chord-preview-popover" class="chord-popover">
                 <div class="chord-popover-header">
@@ -846,6 +1075,7 @@
 
     <!-- Application Scripts -->
     <script src="chord_renderer.js"></script>
+    <script src="strum_renderer.js"></script>
     <script src="app.js"></script>
 </body>
 

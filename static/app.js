@@ -46,6 +46,24 @@ class GuitarApp {
             barres: []
         };
 
+        // Strums State
+        this.strums = [];
+        this.filterStrumTime = 'all';
+        this.filterStrumDiff = 'all';
+        this.filterStrumSearch = '';
+        this.activeStrumEditing = null;
+        this.editorActiveStroke = 'down';
+        this.editorStrokeAccent = false;
+        this.editorStrumState = {
+            name: '',
+            time_signature: '4/4',
+            bpm: 95,
+            difficulty: 'Básico',
+            description: '',
+            pattern: [],
+            audio_file: ''
+        };
+
         this.init();
     }
 
@@ -53,6 +71,7 @@ class GuitarApp {
         this.bindEvents();
         await this.fetchSongs();
         await this.fetchChords();
+        await this.fetchStrums();
         this.showView('dashboard-view');
     }
 
@@ -75,9 +94,24 @@ class GuitarApp {
             const response = await fetch('/api/chords');
             if (response.ok) {
                 this.chords = await response.json();
+            } else {
+                console.error("Failed to load chords from API");
             }
         } catch (err) {
             console.error("Connection error loading chords:", err);
+        }
+    }
+
+    async fetchStrums() {
+        try {
+            const response = await fetch('/api/strums');
+            if (response.ok) {
+                this.strums = await response.json();
+            } else {
+                console.error("Failed to load strums from API");
+            }
+        } catch (err) {
+            console.error("Connection error loading strums:", err);
         }
     }
 
@@ -430,12 +464,153 @@ class GuitarApp {
                 this.hideChordPopover();
             }
         });
+
+        // Strums Search & Filters
+        const strumSearchInput = document.getElementById('strums-search-input');
+        if (strumSearchInput) {
+            strumSearchInput.addEventListener('input', (e) => {
+                this.filterStrumSearch = e.target.value;
+                this.renderStrums();
+            });
+        }
+
+        document.querySelectorAll('#strums-filter-time .pill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#strums-filter-time .pill-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.filterStrumTime = e.currentTarget.getAttribute('data-value');
+                this.renderStrums();
+            });
+        });
+
+        document.querySelectorAll('#strums-filter-diff .pill-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('#strums-filter-diff .pill-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.filterStrumDiff = e.currentTarget.getAttribute('data-value');
+                this.renderStrums();
+            });
+        });
+
+        const clearStrumsBtn = document.getElementById('btn-clear-strums-filters');
+        if (clearStrumsBtn) {
+            clearStrumsBtn.addEventListener('click', () => {
+                this.filterStrumTime = 'all';
+                this.filterStrumDiff = 'all';
+                this.filterStrumSearch = '';
+                if (strumSearchInput) strumSearchInput.value = '';
+                document.querySelectorAll('#strums-filter-time .pill-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('#strums-filter-diff .pill-btn').forEach(b => b.classList.remove('active'));
+                const timeAll = document.querySelector('#strums-filter-time .pill-btn[data-value="all"]');
+                const diffAll = document.querySelector('#strums-filter-diff .pill-btn[data-value="all"]');
+                if (timeAll) timeAll.classList.add('active');
+                if (diffAll) diffAll.classList.add('active');
+                this.renderStrums();
+            });
+        }
+
+        // Add Strum Button
+        const addStrumBtn = document.getElementById('btn-add-strum');
+        if (addStrumBtn) {
+            addStrumBtn.addEventListener('click', () => this.openStrumEditor());
+        }
+
+        // Strum Modal Actions
+        const closeStrumModalBtn = document.getElementById('btn-close-strum-modal');
+        if (closeStrumModalBtn) closeStrumModalBtn.addEventListener('click', () => this.closeStrumEditor());
+        const cancelStrumBtn = document.getElementById('btn-cancel-strum');
+        if (cancelStrumBtn) cancelStrumBtn.addEventListener('click', () => this.closeStrumEditor());
+        const saveStrumBtn = document.getElementById('btn-save-strum');
+        if (saveStrumBtn) saveStrumBtn.addEventListener('click', () => this.saveStrum());
+        const deleteStrumModalBtn = document.getElementById('btn-delete-modal-strum');
+        if (deleteStrumModalBtn) deleteStrumModalBtn.addEventListener('click', () => this.deleteActiveStrum());
+
+        // Builder Strip Controls (Add / Remove / Clear steps)
+        const addStepBtn = document.getElementById('btn-builder-add-step');
+        if (addStepBtn) {
+            addStepBtn.addEventListener('click', () => this.addStrumStep());
+        }
+        const removeStepBtn = document.getElementById('btn-builder-remove-step');
+        if (removeStepBtn) {
+            removeStepBtn.addEventListener('click', () => this.removeStrumStep());
+        }
+        const clearAllStepsBtn = document.getElementById('btn-builder-clear-all');
+        if (clearAllStepsBtn) {
+            clearAllStepsBtn.addEventListener('click', () => this.clearAllStrumSteps());
+        }
+
+        // Stroke Tool Palette Buttons
+        document.querySelectorAll('.stroke-buttons-group .stroke-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.stroke-buttons-group .stroke-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                this.editorActiveStroke = e.currentTarget.getAttribute('data-stroke');
+            });
+        });
+
+        // Accent Checkbox
+        const accentCheck = document.getElementById('stroke-tool-accent');
+        if (accentCheck) {
+            accentCheck.addEventListener('change', (e) => {
+                this.editorStrokeAccent = e.target.checked;
+            });
+        }
+
+        // Time Signature Change in Editor
+        const strumTimeSelect = document.getElementById('strum-form-time');
+        if (strumTimeSelect) {
+            strumTimeSelect.addEventListener('change', (e) => {
+                this.onStrumTimeSignatureChange(e.target.value);
+            });
+        }
+
+        // Audio Upload in Strum Editor
+        const browseAudioBtn = document.getElementById('btn-browse-strum-audio');
+        const audioFileInput = document.getElementById('strum-audio-file-input');
+        const clearAudioBtn = document.getElementById('btn-clear-strum-audio');
+
+        if (browseAudioBtn && audioFileInput) {
+            browseAudioBtn.addEventListener('click', () => audioFileInput.click());
+            audioFileInput.addEventListener('change', (e) => this.handleStrumAudioUpload(e));
+        }
+
+        if (clearAudioBtn) {
+            clearAudioBtn.addEventListener('click', () => this.clearStrumAudio());
+        }
+
+        // Song Strums Modal Binds (Practice Room)
+        const openSongStrumsBtn = document.getElementById('btn-open-song-strums');
+        if (openSongStrumsBtn) {
+            openSongStrumsBtn.addEventListener('click', () => this.openSongStrumsModal());
+        }
+        const closeSongStrumsBtn = document.getElementById('btn-close-song-strums-modal');
+        if (closeSongStrumsBtn) {
+            closeSongStrumsBtn.addEventListener('click', () => this.closeSongStrumsModal());
+        }
+        const stopSidebarStrumBtn = document.getElementById('btn-sidebar-stop-strum');
+        if (stopSidebarStrumBtn) {
+            stopSidebarStrumBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof StrumRenderer !== 'undefined') StrumRenderer.stopCurrentAudio();
+            });
+        }
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('song-strums-modal');
+            if (modal && modal.classList.contains('open') && e.target === modal) {
+                this.closeSongStrumsModal();
+            }
+        });
     }
 
     showView(viewId) {
         // Stop scroll if leaving song viewer
         if (viewId !== 'song-viewer-view' && this.isScrolling) {
             this.stopAutoScroll();
+        }
+
+        // Stop any currently playing strum audio when changing view
+        if (typeof StrumRenderer !== 'undefined' && StrumRenderer.stopCurrentAudio) {
+            StrumRenderer.stopCurrentAudio();
         }
 
         // Hide all views
@@ -478,6 +653,9 @@ class GuitarApp {
             } else if (viewId === 'chords-view') {
                 titleElem.innerText = 'Chords';
                 subtitleElem.innerText = 'Guitar chord library and interactive fretboard';
+            } else if (viewId === 'strums-view') {
+                titleElem.innerText = 'Strums';
+                subtitleElem.innerText = 'Visual strumming patterns and audio rhythm player';
             } else if (viewId === 'add-view') {
                 titleElem.innerText = 'Add New Song';
                 subtitleElem.innerText = 'Expand your customized song library';
@@ -494,6 +672,10 @@ class GuitarApp {
             this.renderDirectory();
         } else if (viewId === 'chords-view') {
             this.renderChords();
+        } else if (viewId === 'strums-view') {
+            this.renderStrums();
+        } else if (viewId === 'add-view') {
+            this.populateStrumSelect('form-strums');
         }
     }
 
@@ -1038,6 +1220,7 @@ class GuitarApp {
         this.currentTransposeOffset = 0;
         this.updateTransposeUI();
         this.renderSongChords(song);
+        this.updateSongStrumsSidebar(song);
 
         // Days & last played
         document.getElementById('view-song-days').innerText = song.last_played ? song.days : 'Never';
@@ -1263,11 +1446,13 @@ class GuitarApp {
         const lastPlayed = document.getElementById('form-last-played').value || null;
         const chords = document.getElementById('form-chords').value;
         const lyrics = document.getElementById('form-lyrics').value;
+        const strumsSelect = document.getElementById('form-strums');
+        const selectedStrums = strumsSelect ? Array.from(strumsSelect.selectedOptions).map(o => o.value) : [];
 
         const payload = {
             title, artist, guitar_level: guitarLevel, lyrics_level: lyricsLevel,
             tutorial, tutorial_link: tutorialLink, last_played: lastPlayed,
-            chords, lyrics
+            chords, lyrics, strums: selectedStrums
         };
 
         try {
@@ -1281,6 +1466,7 @@ class GuitarApp {
                 const data = await response.json();
                 this.showToast("New song created successfully!");
                 document.getElementById('add-song-form').reset();
+                this.populateStrumSelect('form-strums');
 
                 await this.fetchSongs(); // Reload list
                 this.viewSong(data.id); // View the new song
@@ -1310,6 +1496,9 @@ class GuitarApp {
         document.getElementById('edit-form-chords').value = song.chords || '';
         document.getElementById('edit-form-lyrics').value = song.lyrics || '';
 
+        // Populate strum patterns multi-select
+        this.populateStrumSelect('edit-form-strums', song.strums || []);
+
         document.getElementById('edit-song-modal').style.display = 'block';
     }
 
@@ -1330,11 +1519,13 @@ class GuitarApp {
         const lastPlayed = document.getElementById('edit-form-last-played').value || null;
         const chords = document.getElementById('edit-form-chords').value;
         const lyrics = document.getElementById('edit-form-lyrics').value;
+        const editStrumsSelect = document.getElementById('edit-form-strums');
+        const selectedStrums = editStrumsSelect ? Array.from(editStrumsSelect.selectedOptions).map(o => o.value) : [];
 
         const payload = {
             title, artist, guitar_level: guitarLevel, lyrics_level: lyricsLevel,
             tutorial, tutorial_link: tutorialLink, last_played: lastPlayed,
-            chords, lyrics
+            chords, lyrics, strums: selectedStrums
         };
 
         try {
@@ -1892,6 +2083,538 @@ class GuitarApp {
     hideChordPopover() {
         const popover = document.getElementById('chord-preview-popover');
         if (popover) popover.classList.remove('open');
+    }
+
+    // =========================================================================
+    // STRUMS LIBRARY & INTERACTIVE RHYTHM CONTROLLER
+    // =========================================================================
+
+    renderStrums() {
+        const grid = document.getElementById('strums-grid');
+        const countElem = document.getElementById('strums-count');
+        if (!grid) return;
+
+        grid.innerHTML = '';
+
+        let filtered = this.strums.filter(strum => {
+            // Time signature filter
+            if (this.filterStrumTime !== 'all' && strum.time_signature !== this.filterStrumTime) {
+                return false;
+            }
+
+            // Difficulty filter
+            if (this.filterStrumDiff !== 'all' && strum.difficulty !== this.filterStrumDiff) {
+                return false;
+            }
+
+            // Search query filter
+            if (this.filterStrumSearch) {
+                const q = this.filterStrumSearch.toLowerCase().trim();
+                const nameMatch = (strum.name || '').toLowerCase().includes(q);
+                const descMatch = (strum.description || '').toLowerCase().includes(q);
+                const diffMatch = (strum.difficulty || '').toLowerCase().includes(q);
+                const timeMatch = (strum.time_signature || '').toLowerCase().includes(q);
+                if (!nameMatch && !descMatch && !diffMatch && !timeMatch) return false;
+            }
+
+            return true;
+        });
+
+        if (countElem) {
+            countElem.innerText = `${filtered.length} patterns`;
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="helper-text" style="grid-column: 1 / -1; text-align: center; padding: 40px;">No strums match your current search or filters.</div>`;
+            return;
+        }
+
+        // Sort alphabetically by name
+        filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        filtered.forEach(strum => {
+            const cardHTML = StrumRenderer.renderCard(strum);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = cardHTML;
+            grid.appendChild(wrapper.firstElementChild);
+        });
+    }
+
+    populateStrumSelect(selectId, selectedIds = []) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        select.innerHTML = '';
+
+        const activeIds = Array.isArray(selectedIds) ? selectedIds : (selectedIds ? [selectedIds] : []);
+
+        this.strums.forEach(strum => {
+            const opt = document.createElement('option');
+            opt.value = strum.id;
+            opt.innerText = `${strum.name} (${strum.time_signature || '4/4'} - ${strum.difficulty || 'Básico'})`;
+            if (activeIds.includes(strum.id)) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    }
+
+    updateSongStrumsSidebar(song) {
+        const badge = document.getElementById('view-song-strums-badge');
+        const btnText = document.getElementById('btn-open-song-strums-text');
+        const openBtn = document.getElementById('btn-open-song-strums');
+        if (!badge) return;
+
+        const songStrumIds = Array.isArray(song.strums) ? song.strums : (song.strums ? [song.strums] : []);
+        const count = songStrumIds.length;
+
+        badge.innerText = count;
+
+        if (btnText) {
+            btnText.innerText = count > 0 ? `Strum Patterns (${count})` : 'Strum Patterns';
+        }
+
+        if (openBtn) {
+            if (count > 0) {
+                openBtn.classList.add('has-strums');
+            } else {
+                openBtn.classList.remove('has-strums');
+            }
+        }
+    }
+
+    openSongStrumsModal() {
+        const song = this.songs.find(s => s.id === this.currentSongId);
+        if (!song) return;
+
+        const modal = document.getElementById('song-strums-modal');
+        const titleEl = document.getElementById('song-strums-modal-title');
+        const subtitleEl = document.getElementById('song-strums-modal-subtitle');
+        const body = document.getElementById('song-strums-modal-body');
+        if (!modal || !body) return;
+
+        if (titleEl) titleEl.innerText = `Strum Patterns - ${song.title}`;
+        if (subtitleEl) subtitleEl.innerText = `${song.artist} · ${song.strums ? song.strums.length : 0} patrón(es) asociado(s)`;
+
+        const songStrumIds = Array.isArray(song.strums) ? song.strums : (song.strums ? [song.strums] : []);
+        const matched = songStrumIds
+            .map(id => this.strums.find(s => s.id === id))
+            .filter(Boolean);
+
+        if (matched.length === 0) {
+            body.innerHTML = `
+                <div class="song-strums-modal-empty">
+                    <span class="empty-icon">🎸</span>
+                    <p class="empty-title">Sin rasgueos asignados</p>
+                    <p class="helper-text">Esta canción todavía no tiene ningún patrón rítmico asignado.</p>
+                    <button type="button" class="btn btn-primary btn-sm" id="btn-modal-assign-strum" style="margin-top: 14px;">
+                        ✏️ Asignar Rasgueos en Editar Canción
+                    </button>
+                </div>
+            `;
+            const assignBtn = document.getElementById('btn-modal-assign-strum');
+            if (assignBtn) {
+                assignBtn.addEventListener('click', () => {
+                    this.closeSongStrumsModal();
+                    this.openEditModal();
+                });
+            }
+        } else {
+            body.innerHTML = '';
+            matched.forEach(strum => {
+                const cardHTML = StrumRenderer.renderCard(strum, { hideActions: true, audioIdPrefix: 'song' });
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = cardHTML;
+                body.appendChild(wrapper.firstElementChild);
+            });
+        }
+
+        modal.classList.add('open');
+        modal.style.display = 'block';
+    }
+
+    closeSongStrumsModal() {
+        const modal = document.getElementById('song-strums-modal');
+        if (modal) {
+            modal.classList.remove('open');
+            modal.style.display = 'none';
+        }
+    }
+
+    updateSidebarPlayingBar(audioId, isPlaying) {
+        const bar = document.getElementById('sidebar-strum-playing-bar');
+        const label = document.getElementById('sidebar-strum-playing-title');
+        if (!bar) return;
+
+        if (isPlaying && audioId) {
+            const cleanId = audioId.replace('song-', '');
+            const strum = this.strums.find(s => s.id === cleanId);
+            if (label) label.innerText = strum ? strum.name : 'Ritmo activo';
+            bar.style.display = 'flex';
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+
+    openStrumEditor(strum = null) {
+        const modal = document.getElementById('strum-editor-modal');
+        const titleEl = document.getElementById('strum-modal-title');
+        const deleteBtn = document.getElementById('btn-delete-modal-strum');
+
+        if (strum) {
+            this.activeStrumEditing = strum.id;
+            if (titleEl) titleEl.innerText = `Edit Strum: ${strum.name}`;
+            if (deleteBtn) deleteBtn.style.display = 'inline-block';
+
+            this.editorStrumState = {
+                id: strum.id,
+                name: strum.name || '',
+                time_signature: strum.time_signature || '4/4',
+                bpm: strum.bpm || 95,
+                difficulty: strum.difficulty || 'Básico',
+                description: strum.description || '',
+                pattern: strum.pattern ? JSON.parse(JSON.stringify(strum.pattern)) : this.generateDefaultPattern(strum.time_signature || '4/4'),
+                audio_file: strum.audio_file || ''
+            };
+        } else {
+            this.activeStrumEditing = null;
+            if (titleEl) titleEl.innerText = 'New Strum Pattern';
+            if (deleteBtn) deleteBtn.style.display = 'none';
+
+            this.editorStrumState = {
+                name: '',
+                time_signature: '4/4',
+                bpm: 95,
+                difficulty: 'Básico',
+                description: '',
+                pattern: this.generateDefaultPattern('4/4'),
+                audio_file: ''
+            };
+        }
+
+        // Fill inputs
+        document.getElementById('strum-form-name').value = this.editorStrumState.name;
+        document.getElementById('strum-form-time').value = this.editorStrumState.time_signature;
+        document.getElementById('strum-form-bpm').value = this.editorStrumState.bpm || '';
+        document.getElementById('strum-form-diff').value = this.editorStrumState.difficulty;
+        document.getElementById('strum-form-desc').value = this.editorStrumState.description;
+
+        // Reset stroke picker
+        this.editorActiveStroke = 'down';
+        this.editorStrokeAccent = false;
+        document.querySelectorAll('.stroke-buttons-group .stroke-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-stroke') === 'down');
+        });
+        const accentCheck = document.getElementById('stroke-tool-accent');
+        if (accentCheck) accentCheck.checked = false;
+
+        // Update audio UI in modal
+        const audioDisplay = document.getElementById('strum-audio-filename');
+        const clearAudioBtn = document.getElementById('btn-clear-strum-audio');
+        if (this.editorStrumState.audio_file) {
+            if (audioDisplay) audioDisplay.innerText = this.editorStrumState.audio_file;
+            if (clearAudioBtn) clearAudioBtn.style.display = 'inline-flex';
+        } else {
+            if (audioDisplay) audioDisplay.innerText = 'Sin audio cargado';
+            if (clearAudioBtn) clearAudioBtn.style.display = 'none';
+        }
+
+        this.renderInteractiveStrumBuilder();
+
+        if (modal) {
+            modal.classList.add('open');
+            modal.style.display = 'block';
+        }
+    }
+
+    closeStrumEditor() {
+        const modal = document.getElementById('strum-editor-modal');
+        if (modal) {
+            modal.classList.remove('open');
+            modal.style.display = 'none';
+        }
+    }
+
+    generateDefaultPattern(timeSig) {
+        if (timeSig === '3/4') {
+            return [
+                { beat: '1', type: 'down', accent: true },
+                { beat: '&', type: 'rest', accent: false },
+                { beat: '2', type: 'down', accent: false },
+                { beat: '&', type: 'up', accent: false },
+                { beat: '3', type: 'down', accent: false },
+                { beat: '&', type: 'up', accent: false }
+            ];
+        } else if (timeSig === '6/8') {
+            return [
+                { beat: '1', type: 'down', accent: true },
+                { beat: '2', type: 'rest', accent: false },
+                { beat: '3', type: 'rest', accent: false },
+                { beat: '4', type: 'down', accent: true },
+                { beat: '5', type: 'up', accent: false },
+                { beat: '6', type: 'rest', accent: false }
+            ];
+        } else {
+            // Default 4/4
+            return [
+                { beat: '1', type: 'down', accent: true },
+                { beat: '&', type: 'rest', accent: false },
+                { beat: '2', type: 'down', accent: false },
+                { beat: '&', type: 'up', accent: true },
+                { beat: '3', type: 'rest', accent: false },
+                { beat: '&', type: 'up', accent: true },
+                { beat: '4', type: 'down', accent: false },
+                { beat: '&', type: 'up', accent: false }
+            ];
+        }
+    }
+
+    onStrumTimeSignatureChange(newTimeSig) {
+        this.editorStrumState.time_signature = newTimeSig;
+        this.editorStrumState.pattern = this.generateDefaultPattern(newTimeSig);
+        this.renderInteractiveStrumBuilder();
+    }
+
+    getNextBeatLabel(pattern, timeSig) {
+        if (!pattern || pattern.length === 0) return '1';
+        const lastStep = pattern[pattern.length - 1];
+        const lastBeat = (lastStep && lastStep.beat) ? String(lastStep.beat).trim() : '1';
+
+        // 6/8, 9/8, 12/8 (Compound time): purely numbered subdivisions 1, 2, 3, 4, 5, 6, 7...
+        if (timeSig === '6/8' || timeSig === '9/8' || timeSig === '12/8') {
+            const num = parseInt(lastBeat, 10);
+            return !isNaN(num) ? String(num + 1) : String(pattern.length + 1);
+        }
+
+        // Standard meters (4/4, 3/4, 2/4): 1, &, 2, &, 3, &, 4, &...
+        if (lastBeat === '&') {
+            for (let i = pattern.length - 1; i >= 0; i--) {
+                const num = parseInt(pattern[i].beat, 10);
+                if (!isNaN(num)) {
+                    return String(num + 1);
+                }
+            }
+            return String(pattern.length + 1);
+        } else {
+            return '&';
+        }
+    }
+
+    addStrumStep() {
+        if (!this.editorStrumState.pattern) {
+            this.editorStrumState.pattern = [];
+        }
+        if (this.editorStrumState.pattern.length >= 32) return;
+
+        const nextBeat = this.getNextBeatLabel(
+            this.editorStrumState.pattern,
+            this.editorStrumState.time_signature
+        );
+        this.editorStrumState.pattern.push({
+            beat: nextBeat,
+            type: 'rest',
+            accent: false
+        });
+        this.renderInteractiveStrumBuilder();
+    }
+
+    removeStrumStep() {
+        if (!this.editorStrumState.pattern || this.editorStrumState.pattern.length <= 1) return;
+        this.editorStrumState.pattern.pop();
+        this.renderInteractiveStrumBuilder();
+    }
+
+    clearAllStrumSteps() {
+        if (!this.editorStrumState.pattern) return;
+        this.editorStrumState.pattern.forEach(step => {
+            step.type = 'rest';
+            step.accent = false;
+        });
+        this.renderInteractiveStrumBuilder();
+    }
+
+    renderInteractiveStrumBuilder() {
+        const builder = document.getElementById('interactive-strum-builder');
+        if (!builder) return;
+
+        builder.innerHTML = '';
+        const pattern = this.editorStrumState.pattern || [];
+
+        // Update step counter in header
+        const stepsCountEl = document.getElementById('builder-steps-count');
+        if (stepsCountEl) {
+            stepsCountEl.innerText = pattern.length;
+        }
+
+        pattern.forEach((step, idx) => {
+            const slot = document.createElement('div');
+            const strokeDef = StrumRenderer.STROKE_TYPES[step.type] || StrumRenderer.STROKE_TYPES['rest'];
+            const isAccented = step.accent ? 'is-accent' : '';
+            const isRest = step.type === 'rest' ? 'is-rest' : '';
+
+            slot.className = `builder-slot strum-beat-slot ${strokeDef.className} ${isAccented} ${isRest}`;
+            slot.title = `Tiempo ${step.beat}: ${strokeDef.label}${step.accent ? ' (Acentuado)' : ''}. Clic para cambiar golpe o quitar.`;
+
+            slot.innerHTML = `
+                <span class="strum-accent-marker">${step.accent ? '>' : '&nbsp;'}</span>
+                <div class="strum-arrow-box">${strokeDef.iconSvg || strokeDef.symbol}</div>
+                <span class="builder-slot-type-name">${strokeDef.label}</span>
+                <span class="strum-beat-label">${step.beat}</span>
+                <button type="button" class="btn-slot-quick-del" title="Poner en silencio / Quitar flecha">✕</button>
+            `;
+
+            // Hover quick-clear button (✕) to set step to rest
+            const delBtn = slot.querySelector('.btn-slot-quick-del');
+            if (delBtn) {
+                delBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    step.type = 'rest';
+                    step.accent = false;
+                    this.renderInteractiveStrumBuilder();
+                });
+            }
+
+            // Click slot to apply active tool or toggle off
+            slot.addEventListener('click', () => {
+                if (step.type === this.editorActiveStroke && step.accent === this.editorStrokeAccent) {
+                    step.type = 'rest';
+                    step.accent = false;
+                } else {
+                    step.type = this.editorActiveStroke;
+                    step.accent = this.editorStrokeAccent;
+                }
+                this.renderInteractiveStrumBuilder();
+            });
+
+            builder.appendChild(slot);
+        });
+    }
+
+    async handleStrumAudioUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('audio', file);
+
+        const filenameDisplay = document.getElementById('strum-audio-filename');
+        if (filenameDisplay) filenameDisplay.innerText = 'Subiendo audio...';
+
+        try {
+            const response = await fetch('/api/strums/upload-audio', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.editorStrumState.audio_file = data.filename;
+                if (filenameDisplay) filenameDisplay.innerText = data.filename;
+                const clearBtn = document.getElementById('btn-clear-strum-audio');
+                if (clearBtn) clearBtn.style.display = 'inline-flex';
+                this.showToast("Audio de rasgueo subido con éxito!");
+            } else {
+                const err = await response.json();
+                this.showToast(`Error al subir audio: ${err.error || 'Fallo'}`, false);
+                if (filenameDisplay) filenameDisplay.innerText = this.editorStrumState.audio_file || 'Sin audio cargado';
+            }
+        } catch (err) {
+            console.error("Error subiendo audio:", err);
+            this.showToast("Error de conexión al subir audio", false);
+            if (filenameDisplay) filenameDisplay.innerText = this.editorStrumState.audio_file || 'Sin audio cargado';
+        }
+    }
+
+    clearStrumAudio() {
+        this.editorStrumState.audio_file = '';
+        const filenameDisplay = document.getElementById('strum-audio-filename');
+        if (filenameDisplay) filenameDisplay.innerText = 'Sin audio cargado';
+        const clearBtn = document.getElementById('btn-clear-strum-audio');
+        if (clearBtn) clearBtn.style.display = 'none';
+        const input = document.getElementById('strum-audio-file-input');
+        if (input) input.value = '';
+    }
+
+    async saveStrum() {
+        const nameInput = document.getElementById('strum-form-name');
+        const name = nameInput ? nameInput.value.trim() : '';
+        if (!name) {
+            this.showToast("Por favor introduce un nombre para el rasgueo", false);
+            return;
+        }
+
+        const timeSig = document.getElementById('strum-form-time').value;
+        const bpmVal = document.getElementById('strum-form-bpm').value;
+        const diffVal = document.getElementById('strum-form-diff').value;
+        const descVal = document.getElementById('strum-form-desc').value.trim();
+
+        const id = this.activeStrumEditing || name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+        const payload = {
+            id,
+            name,
+            time_signature: timeSig,
+            subdivision: (this.editorStrumState.pattern || []).length,
+            bpm: bpmVal ? parseInt(bpmVal) : null,
+            difficulty: diffVal,
+            description: descVal,
+            pattern: this.editorStrumState.pattern || [],
+            audio_file: this.editorStrumState.audio_file || ''
+        };
+
+        try {
+            const response = await fetch('/api/strums', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                await this.fetchStrums();
+                this.renderStrums();
+                this.closeStrumEditor();
+                this.showToast(`Rasgueo "${payload.name}" guardado!`);
+            } else {
+                const err = await response.json();
+                this.showToast(`Error: ${err.error || 'No se pudo guardar'}`, false);
+            }
+        } catch (err) {
+            console.error("Error guardando rasgueo:", err);
+            this.showToast("Error de conexión al guardar rasgueo", false);
+        }
+    }
+
+    editStrum(strumId) {
+        const strum = this.strums.find(s => s.id === strumId);
+        if (!strum) return;
+        this.openStrumEditor(strum);
+    }
+
+    async deleteActiveStrum() {
+        if (!this.activeStrumEditing) return;
+        await this.deleteStrum(this.activeStrumEditing);
+        this.closeStrumEditor();
+    }
+
+    async deleteStrum(strumId) {
+        if (!confirm("¿Seguro que quieres eliminar este rasgueo?")) return;
+
+        try {
+            const response = await fetch(`/api/strums/${encodeURIComponent(strumId)}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                await this.fetchStrums();
+                this.renderStrums();
+                this.showToast("Rasgueo eliminado correctamente");
+            } else {
+                this.showToast("Error al eliminar rasgueo", false);
+            }
+        } catch (err) {
+            console.error("Error eliminando rasgueo:", err);
+            this.showToast("Error de conexión al eliminar rasgueo", false);
+        }
     }
 }
 

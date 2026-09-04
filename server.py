@@ -7,12 +7,15 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 
 DB_FILE = 'songs_db.json'
 CHORDS_DB_FILE = 'chords_db.json'
+STRUMS_DB_FILE = 'strums_db.json'
+STRUMS_AUDIO_DIR = os.path.join('static', 'audio', 'strums')
+os.makedirs(STRUMS_AUDIO_DIR, exist_ok=True)
 
 def load_db():
     if not os.path.exists(DB_FILE):
         return []
     try:
-        with open(DB_FILE, 'r', encoding='utf-8') as f:
+        with open(DB_FILE, 'r', encoding='utf-8-sig') as f:
             songs = json.load(f)
             # Re-calculate days dynamically on load
             today = datetime.now()
@@ -48,7 +51,7 @@ def load_chords_db():
     if not os.path.exists(CHORDS_DB_FILE):
         return []
     try:
-        with open(CHORDS_DB_FILE, 'r', encoding='utf-8') as f:
+        with open(CHORDS_DB_FILE, 'r', encoding='utf-8-sig') as f:
             return json.load(f)
     except Exception as e:
         print(f"Error loading chords database: {e}")
@@ -61,6 +64,25 @@ def save_chords_db(chords):
         return True
     except Exception as e:
         print(f"Error saving chords database: {e}")
+        return False
+
+def load_strums_db():
+    if not os.path.exists(STRUMS_DB_FILE):
+        return []
+    try:
+        with open(STRUMS_DB_FILE, 'r', encoding='utf-8-sig') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading strums database: {e}")
+        return []
+
+def save_strums_db(strums):
+    try:
+        with open(STRUMS_DB_FILE, 'w', encoding='utf-8') as f:
+            json.dump(strums, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error saving strums database: {e}")
         return False
 
 # Serve index.html at root
@@ -138,6 +160,76 @@ def delete_chord(chord_id):
         save_chords_db(chords)
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "Chord not found"}), 404
+
+# Strums Endpoints
+@app.route('/api/strums', methods=['GET'])
+def get_strums():
+    return jsonify(load_strums_db())
+
+@app.route('/api/strums', methods=['POST'])
+def save_strum():
+    data = request.json
+    if not data or not data.get('name'):
+        return jsonify({"success": False, "error": "Strum name is required"}), 400
+    
+    strums = load_strums_db()
+    strum_id = data.get('id')
+    if not strum_id:
+        import re
+        strum_id = re.sub(r'[^a-zA-Z0-9]+', '-', data['name'].lower()).strip('-')
+        data['id'] = strum_id
+
+    # Check if updating existing
+    updated = False
+    for i, s in enumerate(strums):
+        if s.get('id') == strum_id or s.get('name', '').lower() == data['name'].lower():
+            strums[i] = data
+            updated = True
+            break
+    if not updated:
+        strums.append(data)
+    
+    if save_strums_db(strums):
+        return jsonify({"success": True, "strum": data})
+    return jsonify({"success": False, "error": "Failed to save strum"}), 500
+
+@app.route('/api/strums/<string:strum_id>', methods=['DELETE'])
+def delete_strum(strum_id):
+    strums = load_strums_db()
+    initial_len = len(strums)
+    target_strum = next((s for s in strums if s.get('id') == strum_id), None)
+    if target_strum and target_strum.get('audio_file'):
+        audio_path = os.path.join(STRUMS_AUDIO_DIR, target_strum['audio_file'])
+        if os.path.exists(audio_path):
+            try:
+                os.remove(audio_path)
+            except Exception as e:
+                print(f"Could not remove audio file: {e}")
+
+    strums = [s for s in strums if s.get('id') != strum_id]
+    if len(strums) < initial_len:
+        save_strums_db(strums)
+        return jsonify({"success": True})
+    return jsonify({"success": False, "error": "Strum not found"}), 404
+
+@app.route('/api/strums/upload-audio', methods=['POST'])
+def upload_strum_audio():
+    if 'audio' not in request.files:
+        return jsonify({"success": False, "error": "No audio file provided"}), 400
+    file = request.files['audio']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "No selected file"}), 400
+    
+    ext = os.path.splitext(file.filename)[1].lower()
+    allowed_exts = ['.mp3', '.wav', '.m4a', '.ogg', '.aac', '.flac']
+    if ext not in allowed_exts:
+        return jsonify({"success": False, "error": f"Invalid format. Allowed: {', '.join(allowed_exts)}"}), 400
+    
+    import uuid
+    safe_name = f"strum_{uuid.uuid4().hex[:10]}{ext}"
+    filepath = os.path.join(STRUMS_AUDIO_DIR, safe_name)
+    file.save(filepath)
+    return jsonify({"success": True, "filename": safe_name, "url": f"/audio/strums/{safe_name}"})
 
 @app.route('/api/songs/<int:song_id>/played', methods=['POST'])
 def mark_played(song_id):
@@ -218,7 +310,11 @@ def edit_song(song_id):
                     song['last_played'] = None
                 else:
                     song['last_played'] = lp
-                    
+
+            # Strums association
+            if 'strums' in data:
+                song['strums'] = data.get('strums', [])
+                
             found = True
             break
             
@@ -247,6 +343,7 @@ def add_song():
     tutorial_link = data.get('tutorial_link', '').strip()
     chords = data.get('chords', '').strip()
     lyrics_text = data.get('lyrics', '').strip()
+    strums = data.get('strums', [])
     last_played = data.get('last_played')
     if not last_played:
         last_played = None
@@ -263,6 +360,7 @@ def add_song():
         "tutorial": tutorial,
         "tutorial_link": tutorial_link,
         "chords": chords,
+        "strums": strums,
         "lyrics": lyrics_text,
         "play_count": 0
     }

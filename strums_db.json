@@ -1,0 +1,294 @@
+[
+  {
+    "id": "pop-rock-clasico",
+    "name": "Pop Rock Clásico",
+    "time_signature": "4/4",
+    "subdivision": 8,
+    "bpm": 95,
+    "difficulty": "Básico",
+    "description": "El patrón rítmico más universal para guitarra acústica y española (ej. Wonderwall, Let It Be, Soldadito Marinero).",
+    "pattern": [
+      {
+        "beat": "1",
+        "type": "down",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "2",
+        "type": "down",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": true
+      },
+      {
+        "beat": "3",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": true
+      },
+      {
+        "beat": "4",
+        "type": "down",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      }
+    ],
+    "audio_file": ""
+  },
+  {
+    "id": "rumba-catalana",
+    "name": "Rumba Pop / Catalana",
+    "time_signature": "4/4",
+    "subdivision": 8,
+    "bpm": 110,
+    "difficulty": "Intermedio",
+    "description": "Ritmo vivo con golpe de apagado en el tiempo 2 y 4 (ej. Melendi, Estopa, Kiko Veneno).",
+    "pattern": [
+      {
+        "beat": "1",
+        "type": "down",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      },
+      {
+        "beat": "2",
+        "type": "slap",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      },
+      {
+        "beat": "3",
+        "type": "down",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      },
+      {
+        "beat": "4",
+        "type": "slap",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      }
+    ],
+    "audio_file": ""
+  },
+  {
+    "id": "balada-6-8",
+    "name": "Balada Lenta 6/8",
+    "time_signature": "6/8",
+    "subdivision": 6,
+    "bpm": 70,
+    "difficulty": "Básico",
+    "description": "Ritmo ternario balanceado para baladas emotivas y arpegios rasgueados (ej. Hallelujah, Nothing Else Matters).",
+    "pattern": [
+      {
+        "accent": true,
+        "beat": "1",
+        "type": "down"
+      },
+      {
+        "accent": false,
+        "beat": "2",
+        "type": "rest"
+      },
+      {
+        "accent": false,
+        "beat": "3",
+        "type": "rest"
+      },
+      {
+        "accent": true,
+        "beat": "4",
+        "type": "down"
+      },
+      {
+        "accent": false,
+        "beat": "5",
+        "type": "up"
+      },
+      {
+        "accent": false,
+        "beat": "6",
+        "type": "rest"
+      }
+    ],
+    "audio_file": ""
+  },
+  {
+    "id": "folk-country-alternado",
+    "name": "Country / Folk Alternado",
+    "time_signature": "4/4",
+    "subdivision": 8,
+    "bpm": 105,
+    "difficulty": "Intermedio",
+    "description": "Toque de bordona grave en tiempo 1 y 3, seguido de rasgueo ágil en agudas.",
+    "pattern": [
+      {
+        "beat": "1",
+        "type": "bass",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "2",
+        "type": "treble",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      },
+      {
+        "beat": "3",
+        "type": "bass",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "4",
+        "type": "treble",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "up",
+        "accent": false
+      }
+    ],
+    "audio_file": ""
+  },
+  {
+    "id": "reggae-skank",
+    "name": "Reggae Skank (A contratiempo)",
+    "time_signature": "4/4",
+    "subdivision": 8,
+    "bpm": 80,
+    "difficulty": "Intermedio",
+    "description": "Acentos estrictamente en los contratiempos (&) con cortes secos apagados (ej. Bob Marley).",
+    "pattern": [
+      {
+        "beat": "1",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "slap",
+        "accent": true
+      },
+      {
+        "beat": "2",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "slap",
+        "accent": true
+      },
+      {
+        "beat": "3",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "slap",
+        "accent": true
+      },
+      {
+        "beat": "4",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "slap",
+        "accent": true
+      }
+    ],
+    "audio_file": ""
+  },
+  {
+    "id": "vals-3-4",
+    "name": "Vals Tradicional 3/4",
+    "time_signature": "3/4",
+    "subdivision": 6,
+    "bpm": 120,
+    "difficulty": "Básico",
+    "description": "Ritmo de tres tiempos: bordona en el 1, y dos rasgueos en tiempos 2 y 3.",
+    "pattern": [
+      {
+        "beat": "1",
+        "type": "bass",
+        "accent": true
+      },
+      {
+        "beat": "&",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "2",
+        "type": "down",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "rest",
+        "accent": false
+      },
+      {
+        "beat": "3",
+        "type": "down",
+        "accent": false
+      },
+      {
+        "beat": "&",
+        "type": "rest",
+        "accent": false
+      }
+    ],
+    "audio_file": ""
+  }
+]
